@@ -10,7 +10,8 @@ keep_words_and_punct = r"[^a-zA-Z?!.]|[.]{2,}"
 keep_words = r"[^a-zA-Z]|[.]{2,}"
 mult_whitespaces = "\s{3,}"
 
-df = pd.read_csv('data/review_data.csv')
+#df = pd.read_csv('data/review_data.csv')
+df = pd.read_csv('data/review_data_small.csv')
 
 positive_reviews = []
 negative_reviews = []
@@ -24,18 +25,20 @@ for i, row in df.iterrows():
 # split sentences and tokenize each sentence to a list
 train_sentences = []
 tokenizer = WhitespaceTokenizer()
-for review in negative_reviews:
+for review in positive_reviews:
     sentences = re.split("[.?!]", str(review))
     for sentence in sentences:
         train_sentences.append(tokenizer.tokenize(sentence))
 
+# start word embeddings training
 print("start training...")
 model = Word2Vec(train_sentences, size=100, window=5, min_count=5, workers=4)
-model.save('data/w2vmodel.bin')
+model.save('data/w2vmodel_positive.bin')
 
 X = model[model.wv.vocab]
 vocab_size = len(model.wv.vocab)
 vector_dim = len(model.wv['the'])
+
 
 # store embeddings to numpy matrix for tf and keras
 def get_embedding_matrix():

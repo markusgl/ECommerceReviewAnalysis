@@ -15,7 +15,7 @@ saved_embeddings = tf.constant(dp.get_embedding_matrix())
 embedding = tf.Variable(initial_value=saved_embeddings, trainable=False)
 
 # create the cosine similarity operations
-norm = tf.sqrt(tf.reduce_sum(tf.square(embedding), 1, keep_dims=True))
+norm = tf.sqrt(tf.reduce_sum(tf.square(embedding), 1, keepdims=True))
 normalized_embeddings = embedding / norm
 valid_embeddings = tf.nn.embedding_lookup(
       normalized_embeddings, valid_dataset)
@@ -24,6 +24,7 @@ similarity = tf.matmul(valid_embeddings, normalized_embeddings, transpose_b=True
 # Add variable initializer.
 init = tf.global_variables_initializer()
 
+# load model with word embeddings
 model = Word2Vec.load('data/w2vmodel.bin')
 wv = model.wv
 
