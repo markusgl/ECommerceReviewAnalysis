@@ -104,4 +104,5 @@ ENV/
 .idea
 *.iml
 
+/data
 *.bin

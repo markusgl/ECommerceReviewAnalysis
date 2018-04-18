@@ -20,5 +20,6 @@ word_counts = vectorizer.fit_transform(df['Review Text'].values.astype(str)).ast
 clf = SVC(kernel='linear', C=100, gamma=0.01, decision_function_shape='ovo', probability=True)
 print("Start training SVM...")
 clf.fit(word_counts, targets)
+print("Training finished")
 scores = cross_val_score(clf, word_counts, targets, cv=5)
 print(scores)

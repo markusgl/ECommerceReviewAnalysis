@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-import data_preprocessing as dp
+from data_preprocessing import DataPreprocessor as dp
 from gensim.models import Word2Vec
 
 # select some random word for testing purposes and to evaluate similarity
