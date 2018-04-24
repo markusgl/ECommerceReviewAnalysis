@@ -114,3 +114,5 @@ ENV/
 glove.6B
 
 /examples
+
+*.hdf5

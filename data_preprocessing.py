@@ -121,4 +121,4 @@ class DataPreprocessor:
 
 #DataPreprocessor().train_word2vec()
 #DataPreprocessor().get_embedding_matrix('data/w2vmodel.bin')
-DataPreprocessor().plot_model()
+#DataPreprocessor().plot_model()

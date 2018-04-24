@@ -2,7 +2,7 @@ import os
 from keras import Input
 from keras.engine import Model
 from keras.models import Sequential
-from keras.layers import Dense, Conv1D, MaxPooling1D
+from keras.layers import Dense, Conv1D, MaxPooling1D, GlobalMaxPooling1D, Activation
 from keras.layers import Convolution1D, Flatten, Dropout
 from keras.layers.embeddings import Embedding
 from keras.callbacks import TensorBoard
@@ -70,33 +70,19 @@ nb_validation_samples = int(VALIDATION_SPLIT * data.shape[0])
 
 x_train = data[:-nb_validation_samples]
 y_train = labels[:-nb_validation_samples]
-x_val = data[-nb_validation_samples:]
-y_val = labels[-nb_validation_samples:]
+x_test = data[-nb_validation_samples:]
+y_test = labels[-nb_validation_samples:]
 
-
-# PREPARING EMBEDDING LAYER
-
-if WORD2VEC:
-    # USE WORD2VEC WORD EMBEDDINGS
-    EMBEDDING_DIM = 300
-    dp = DataPreprocessor()
-    # use self trained word2vec embeddings based one the same data set
-    #embeddings_index = dp.get_embeddings_index('data/w2vmodel.bin')
-    # use pretrained word2vec embeddings from google
-    embeddings_index = dp.get_embeddings_index_from_google_model()
-else:
-    # USE PRETRAINED GLOVE WORD EMBEDDINGS (trained on 20 newsgroups)
-    EMBEDDING_DIM = 100
-    embeddings_index = {}
-    f = open(os.path.join(GLOVE_DIR, 'glove.6B.100d.txt'), encoding='utf-8')
-    for line in f:
-        values = line.split()
-        word = values[0]
-        coefs = np.asarray(values[1:], dtype='float32')
-        embeddings_index[word] = coefs
-    f.close()
-
-print('Found %s word vectors.' % len(embeddings_index))
+# USE PRETRAINED GLOVE WORD EMBEDDINGS (trained on 20 newsgroups)
+EMBEDDING_DIM = 100
+embeddings_index = {}
+f = open(os.path.join(GLOVE_DIR, 'glove.6B.100d.txt'), encoding='utf-8')
+for line in f:
+    values = line.split()
+    word = values[0]
+    coefs = np.asarray(values[1:], dtype='float32')
+    embeddings_index[word] = coefs
+f.close()
 
 embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
 for word, i in word_index.items():
@@ -106,41 +92,61 @@ for word, i in word_index.items():
         embedding_matrix[i] = embedding_vector
 
 
-# KERAS TRAINING
-#print("EMBEDDING_DIM %s" % embedding_matrix.shape[1])
-embedding_layer = Embedding(len(word_index) + 1,
-                            EMBEDDING_DIM,
-                            weights=[embedding_matrix],
-                            input_length=MAX_SEQUENCE_LENGTH,
-                            trainable=False)
+# set parameters:
+#max_features = 5000
+MAX_SEQUENCE_LEN = 1000
+BATCH_SIZE = 32
+#embedding_dims = 50
+FILTERS = 250
+KERNEL_SIZE = 3
+HIDDEN_DIMS = 250
+EPOCHS = 2
 
 
-sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32')
-embedded_sequences = embedding_layer(sequence_input)
-x = Conv1D(128, 5, activation='relu')(embedded_sequences)
-x = MaxPooling1D(5)(x)
-x = Dropout(0.5)(x)
-x = Conv1D(128, 5, activation='relu')(x)
-x = MaxPooling1D(5)(x)
-x = Dropout(0.5)(x)
-x = Conv1D(128, 5, activation='relu')(x)
-x = MaxPooling1D(35)(x)  # global max pooling
-x = Flatten()(x)
-x = Dense(128, activation='relu')(x)
-preds = Dense(len(labels_index), activation='softmax')(x)
+model = Sequential()
+# we start off with an efficient embedding layer which maps
+# our vocab indices into embedding_dims dimensions
+model.add(Embedding(len(word_index) + 1,
+                    EMBEDDING_DIM,
+                    weights=[embedding_matrix],
+                    input_length=MAX_SEQUENCE_LEN))
 
-model = Model(sequence_input, preds)
-model.compile(loss='categorical_crossentropy',
-              optimizer='rmsprop',
+model.add(Dropout(0.2))
+
+# we add a Convolution1D, which will learn filters
+# word group filters of size filter_length:
+model.add(Conv1D(FILTERS,
+                 KERNEL_SIZE,
+                 padding='valid',
+                 activation='relu',
+                 strides=1))
+# we use max pooling:
+model.add(GlobalMaxPooling1D())
+
+# We add a vanilla hidden layer:
+model.add(Dense(HIDDEN_DIMS))
+model.add(Dropout(0.2))
+model.add(Activation('relu'))
+
+# We project onto a single unit output layer, and squash it with a sigmoid:
+#model.add(Dense(1))
+model.add(Dense(len(labels_index)))
+model.add(Activation('sigmoid'))
+
+model.compile(loss='binary_crossentropy',
+              optimizer='adam',
               metrics=['accuracy'])
+model.fit(x_train, y_train,
+          batch_size=BATCH_SIZE,
+          epochs=EPOCHS,
+          validation_data=(x_test, y_test))
 
-print("start training...")
+# Log to tensorboard
 tensorBoardCallback = TensorBoard(log_dir='./logs', write_graph=True)
-model.fit(x_train, y_train, validation_data=(x_val, y_val),
-          epochs=3, callbacks=[tensorBoardCallback], batch_size=128, verbose=2)
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-model.save('keras_model.hdf5')
+model.fit(x_train, y_train, epochs=3, callbacks=[tensorBoardCallback], batch_size=64, verbose=2)
+
 # Evaluation on the test set
-scores = model.evaluate(x_val, y_val, verbose=0)
+scores = model.evaluate(x_test, y_test, verbose=0)
 print("Accuracy: %.2f%%" % (scores[1]*100))
-
