@@ -14,7 +14,7 @@ df = pd.read_csv('../data/review_data.csv')
 df.dropna(how="all", inplace=True) # drop blank lines
 
 review_text = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(df['Review Text']).lower()))
-ratings = df['Rating'].values # ratings from 0 to 5
+ratings = df['Rating'].values # ratings from 1 to 5
 
 # split ratings into only positive (0) and negative (1) reviews
 targets = np.zeros(shape=ratings.shape, dtype=int)

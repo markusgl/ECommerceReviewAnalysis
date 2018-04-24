@@ -1,6 +1,6 @@
 import pandas as pd
 import re
-from gensim.models import Word2Vec
+from gensim.models import Word2Vec, KeyedVectors
 import matplotlib.pyplot as plt
 from nltk.tokenize import WhitespaceTokenizer
 from sklearn.decomposition import PCA
@@ -68,10 +68,11 @@ class DataPreprocessor:
         model = Word2Vec.load(model_path)
         # vocab_size = len(model.wv.vocab)
         # get the dimension of the word vectors
-        vector_dim = len(model.wv['the'])
-        #print(len(model.wv.vocab))
+        vector_dim = len(model.wv['the']) # TODO more robust solution
+
         # create appropriate numpy zeros array
         embedding_matrix = np.zeros((len(model.wv.vocab), vector_dim))
+
         # iterate over embedding representation of each word in the vocabulary and add it to the np array
         for word in range(len(model.wv.vocab)):
             embedding_vector = model.wv[model.wv.index2word[word]]
@@ -80,20 +81,44 @@ class DataPreprocessor:
 
         return embedding_matrix
 
+    def get_embeddings_index(self, model_path):
+        model = Word2Vec.load(model_path)
+
+        embeddings_index = {}
+        for word in range(len(model.wv.vocab)):
+            embedding_vector = model.wv[model.wv.index2word[word]]
+            embeddings_index[model.wv.index2word[word]] = embedding_vector
+
+        return embeddings_index
+
+    def get_embeddings_index_from_google_model(self):
+        model = KeyedVectors.load_word2vec_format('C:/Users/marku/develop/Data/GoogleNews-vectors-negative300.bin', binary=True)
+
+        embeddings_index = {}
+        for word in range(len(model.wv.vocab)):
+            embedding_vector = model.wv[model.wv.index2word[word]]
+            embeddings_index[model.wv.index2word[word]] = embedding_vector
+
+        return embeddings_index
+
     # Visualization using matplotlib and PCA
-    """
-    X = model[model.wv.vocab]
-    pca = PCA(n_components=2)
-    result = pca.fit_transform(X)
-    
-    plt.scatter(result[:, 0], result[:, 1])
-    words = list(model.wv.vocab)
-    for i, word in enumerate(words):
-        plt.annotate(word, xy=(result[i, 0], result[i, 1]))
-    
-    plt.savefig('wordvectors.png')
-    plt.show()
-    """
+    def plot_model(self):
+        #model = Word2Vec.load(model_path)
+        model = KeyedVectors.load_word2vec_format('C:/Users/marku/develop/Data/GoogleNews-vectors-negative300.bin',
+                                                  binary=True)
+        X = model[model.wv.vocab]
+        pca = PCA(n_components=2)
+        result = pca.fit_transform(X)
+
+        plt.scatter(result[:, 0], result[:, 1])
+        words = list(model.wv.vocab)
+        for i, word in enumerate(words):
+            plt.annotate(word, xy=(result[i, 0], result[i, 1]))
+
+        plt.savefig('wordvectors.png')
+        plt.show()
+
 
 #DataPreprocessor().train_word2vec()
 #DataPreprocessor().get_embedding_matrix('data/w2vmodel.bin')
+DataPreprocessor().plot_model()

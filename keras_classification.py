@@ -17,10 +17,10 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.layers import Embedding
 
 BASE_DIR = ''
-GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
+#GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
 MAX_SEQUENCE_LENGTH = 1000
-MAX_NUM_WORDS = 20000
-EMBEDDING_DIM = 100
+#MAX_NUM_WORDS = 20000
+EMBEDDING_DIM = 300
 VALIDATION_SPLIT = 0.2
 
 texts = []
@@ -77,12 +77,13 @@ y_val = labels[-nb_validation_samples:]
 # PREPARING EMBEDDING LAYER
 # TODO use another word embedding set and word2vec
 # use self trained embeddings
-"""
 dp = DataPreprocessor()
-embedding_matrix = dp.get_embedding_matrix('data/w2vmodel.bin')
-"""
+#embeddings_index = dp.get_embeddings_index('data/w2vmodel.bin')
+embeddings_index = dp.get_embeddings_index_from_google_model()
+
 
 # USE PRETRAINED WORD EMBEDDINGS
+"""
 embeddings_index = {}
 f = open(os.path.join(GLOVE_DIR, 'glove.6B.100d.txt'), encoding='utf-8')
 for line in f:
@@ -91,7 +92,7 @@ for line in f:
     coefs = np.asarray(values[1:], dtype='float32')
     embeddings_index[word] = coefs
 f.close()
-
+"""
 print('Found %s word vectors.' % len(embeddings_index))
 
 embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
