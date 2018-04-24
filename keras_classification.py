@@ -1,5 +1,4 @@
 import os
-
 from keras import Input
 from keras.engine import Model
 from keras.models import Sequential
@@ -16,7 +15,7 @@ from keras.utils import to_categorical
 
 
 BASE_DIR = ''
-GLOVE_DIR = os.path.join(BASE_DIR, 'C:/Users/marku/develop/Data/glove/glove.6B')
+GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
 MAX_SEQUENCE_LENGTH = 1000
 MAX_NUM_WORDS = 20000
 EMBEDDING_DIM = 100
@@ -106,14 +105,7 @@ for word, i in word_index.items():
 # KERAS TRAINING
 from keras.layers import Embedding
 
-print("EMBEDDING_DIM %s"%embedding_matrix.shape[1])
-"""
-embedding_layer = Embedding(input_dim=embedding_matrix.shape[0],
-                            output_dim=embedding_matrix.shape[1],
-                            weights=[embedding_matrix],
-                            input_length=MAX_SEQUENCE_LENGTH,
-                            trainable=False)
-"""
+print("EMBEDDING_DIM %s" % embedding_matrix.shape[1])
 embedding_layer = Embedding(len(word_index) + 1,
                             EMBEDDING_DIM,
                             weights=[embedding_matrix],
@@ -141,7 +133,7 @@ model.compile(loss='categorical_crossentropy',
 print("start training...")
 tensorBoardCallback = TensorBoard(log_dir='./logs', write_graph=True)
 model.fit(x_train, y_train, validation_data=(x_val, y_val),
-          epochs=3, callbacks=[tensorBoardCallback], batch_size=128)
+          epochs=3, callbacks=[tensorBoardCallback], batch_size=128, verbose=2)
 
 # Evaluation on the test set
 scores = model.evaluate(x_val, y_val, verbose=0)
