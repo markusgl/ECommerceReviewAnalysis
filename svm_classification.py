@@ -16,13 +16,13 @@ df.dropna(how="all", inplace=True) # drop blank lines
 review_text = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(df['Review Text']).lower()))
 ratings = df['Rating'].values # ratings from 0 to 5
 
-# split ratings into only positive (1) and negative (0) reviews
+# split ratings into only positive (0) and negative (1) reviews
 targets = np.zeros(shape=ratings.shape, dtype=int)
 for i in range(len(ratings)):
     if ratings[i] >= 3:
-        targets[i, ] = 1
-    else:
         targets[i, ] = 0
+    else:
+        targets[i, ] = 1
 
 pipeline = Pipeline([
                     ('vect', TfidfVectorizer(ngram_range=(1, 2), max_df=0.5, use_idf=False, sublinear_tf=True)),

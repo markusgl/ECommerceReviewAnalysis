@@ -12,7 +12,9 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import re
 from keras.utils import to_categorical
-
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+from keras.layers import Embedding
 
 BASE_DIR = ''
 GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
@@ -31,6 +33,8 @@ mult_whitespaces = "\s{3,}"
 
 df = pd.read_csv('data/review_data.csv')
 # df = pd.read_csv('data/review_data_small.csv')
+
+# split in to positive and negative reviews
 positive_reviews = []
 negative_reviews = []
 for i, row in df.iterrows():
@@ -43,10 +47,7 @@ for i, row in df.iterrows():
         labels.append(1)
 
 texts = positive_reviews + negative_reviews
-print(labels_index)
-
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
+#print(labels_index)
 
 tokenizer = Tokenizer()
 tokenizer.fit_on_texts(texts)
@@ -56,7 +57,6 @@ word_index = tokenizer.word_index
 print('Found %s unique tokens.' % len(word_index))
 data = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
 
-print(labels)
 labels = to_categorical(np.asarray(labels))
 print('Shape of data tensor:', data.shape)
 print('Shape of label tensor:', labels.shape)
@@ -66,7 +66,7 @@ indices = np.arange(data.shape[0])
 np.random.shuffle(indices)
 data = data[indices]
 labels = labels[indices]
-nb_validation_samples = int(VALIDATION_SPLIT  * data.shape[0])
+nb_validation_samples = int(VALIDATION_SPLIT * data.shape[0])
 
 x_train = data[:-nb_validation_samples]
 y_train = labels[:-nb_validation_samples]
@@ -103,9 +103,7 @@ for word, i in word_index.items():
 
 
 # KERAS TRAINING
-from keras.layers import Embedding
-
-print("EMBEDDING_DIM %s" % embedding_matrix.shape[1])
+#print("EMBEDDING_DIM %s" % embedding_matrix.shape[1])
 embedding_layer = Embedding(len(word_index) + 1,
                             EMBEDDING_DIM,
                             weights=[embedding_matrix],
