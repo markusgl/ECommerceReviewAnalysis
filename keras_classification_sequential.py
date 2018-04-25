@@ -109,7 +109,7 @@ BATCH_SIZE = 32
 FILTERS = 250
 KERNEL_SIZE = 3
 HIDDEN_DIMS = 250
-EPOCHS = 2
+EPOCHS = 3
 
 
 model = Sequential()
