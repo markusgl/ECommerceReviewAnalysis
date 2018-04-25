@@ -21,7 +21,7 @@ GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
 MAX_SEQUENCE_LENGTH = 1000
 #MAX_NUM_WORDS = 20000
 VALIDATION_SPLIT = 0.2
-WORD2VEC = False
+WORD2VEC = True
 
 texts = []
 labels = []
@@ -73,16 +73,25 @@ y_train = labels[:-nb_validation_samples]
 x_test = data[-nb_validation_samples:]
 y_test = labels[-nb_validation_samples:]
 
-# USE PRETRAINED GLOVE WORD EMBEDDINGS (trained on 20 newsgroups)
-EMBEDDING_DIM = 100
-embeddings_index = {}
-f = open(os.path.join(GLOVE_DIR, 'glove.6B.100d.txt'), encoding='utf-8')
-for line in f:
-    values = line.split()
-    word = values[0]
-    coefs = np.asarray(values[1:], dtype='float32')
-    embeddings_index[word] = coefs
-f.close()
+if WORD2VEC:
+    # USE WORD2VEC WORD EMBEDDINGS
+    EMBEDDING_DIM = 300
+    dp = DataPreprocessor()
+    # use self trained word2vec embeddings based one the same data set
+    #embeddings_index = dp.get_embeddings_index('data/w2vmodel.bin')
+    # use pretrained word2vec embeddings from google
+    embeddings_index = dp.get_embeddings_index_from_google_model()
+else:
+    # USE PRETRAINED GLOVE WORD EMBEDDINGS (trained on 20 newsgroups)
+    EMBEDDING_DIM = 100
+    embeddings_index = {}
+    f = open(os.path.join(GLOVE_DIR, 'glove.6B.100d.txt'), encoding='utf-8')
+    for line in f:
+        values = line.split()
+        word = values[0]
+        coefs = np.asarray(values[1:], dtype='float32')
+        embeddings_index[word] = coefs
+    f.close()
 
 embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
 for word, i in word_index.items():
@@ -142,7 +151,7 @@ model.fit(x_train, y_train,
           validation_data=(x_test, y_test))
 
 # Log to tensorboard
-tensorBoardCallback = TensorBoard(log_dir='./logs', write_graph=True)
+tensorBoardCallback = TensorBoard(log_dir='./logs/sequential', write_graph=True)
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 model.fit(x_train, y_train, epochs=3, callbacks=[tensorBoardCallback], batch_size=64, verbose=2)
