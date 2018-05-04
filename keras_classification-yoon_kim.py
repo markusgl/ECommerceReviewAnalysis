@@ -61,7 +61,8 @@ word_index = tokenizer.word_index
 print('Found %s unique tokens.' % len(word_index))
 data = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
 
-labels = to_categorical(np.asarray(labels))
+#labels = to_categorical(np.asarray(labels))
+labels = np.asarray(labels)
 print('Shape of data tensor:', data.shape)
 print('Shape of label tensor:', labels.shape)
 
@@ -106,20 +107,18 @@ for word, i in word_index.items():
 
 
 # set parameters:
-#max_features = 5000
 MAX_SEQUENCE_LEN = 1000
 BATCH_SIZE = 32
-#embedding_dims = 50
-FILTERS = 6
+FILTERS = 100
 KERNEL_SIZE = 3
 EPOCHS = 3
 HIDDEN_DIMS = 250
 P_DROPOUT = 0.5
-embedding_size = 64
-maxlen = 50
-nb_feature_maps = 32
-batch_size = 1
-nb_classes = np.max(y_train) + 1
+#embedding_size = 64
+#maxlen = 50
+#nb_feature_maps = 32
+#batch_size = 1
+#nb_classes = np.max(y_train) + 1
 
 """
 model = Sequential()
@@ -158,7 +157,7 @@ model.fit(x_train, y_train,
 
 
 submodels = []
-for kw in (3, 4, 5):    # kernel sizes
+for filter in (2, 3, 4):    # kernel sizes
     submodel = Sequential()
     submodel.add(Embedding(len(word_index) + 1,
                            EMBEDDING_DIM,
@@ -166,7 +165,7 @@ for kw in (3, 4, 5):    # kernel sizes
                            input_length=MAX_SEQUENCE_LENGTH,
                            trainable=False))
     submodel.add(Conv1D(FILTERS,
-                        kw,
+                        filter,
                         padding='valid',
                         activation='relu',
                         strides=1))
@@ -185,15 +184,22 @@ print('Compiling model')
 model.compile(loss='binary_crossentropy',
               optimizer='adam',
               metrics=['accuracy'])
-
+"""
 model.fit(x_train, y_train,
           batch_size=BATCH_SIZE,
           epochs=EPOCHS,
           validation_data=(x_test, y_test),
           verbose=2)
+"""
+
+hist = model.fit([x_train, x_train, x_train],
+                     y_train,
+                     batch_size=BATCH_SIZE,
+                     epochs=EPOCHS,
+                     validation_data=([x_test, x_test, x_test], y_test),)
 
 # Evaluation on the test set
-scores = model.evaluate(x_test, y_test, verbose=0)
-print("Accuracy: %.2f%%" % (scores[1]*100))
+#scores = model.evaluate(x_test, y_test, batch_size=BATCH_SIZE)
+#print("Accuracy: %.2f%%" % (scores[1]*100))
 # TODO confusion matrix
 

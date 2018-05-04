@@ -15,13 +15,39 @@ class DataPreprocessor:
         mult_whitespaces = "\s{3,}"
 
         df = pd.read_csv('data/review_data.csv')
+        df.dropna(how="all", inplace=True)  # drop blank lines
         # df = pd.read_csv('data/review_data_small.csv')
         positive_reviews = []
         negative_reviews = []
         for i, row in df.iterrows():
-            clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(row['Review Text']).lower()))
+            review = row['Title'] + ' ' + row['Review Text']
+            print(review)
+            clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
+            print(clean_review)
             if row['Rating'] >= 3:
                 positive_reviews.append(clean_review)
+            else:
+                negative_reviews.append(clean_review)
+
+        return positive_reviews, negative_reviews
+
+    def separate_pos_neutral_neg(self):
+        keep_words_and_punct = r"[^a-zA-Z?!.]|[.]{2,}"
+        keep_words = r"[^a-zA-Z]|[.]{2,}"
+        mult_whitespaces = "\s{3,}"
+
+        df = pd.read_csv('data/review_data.csv')
+        df.dropna(how="all", inplace=True)  # drop blank lines
+        # df = pd.read_csv('data/review_data_small.csv')
+        positive_reviews = []
+        negative_reviews = []
+        neutral_reviews = []
+        for i, row in df.iterrows():
+            clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(row['Review Text']).lower()))
+            if row['Rating'] > 3:
+                positive_reviews.append(clean_review)
+            elif row['Rating'] == 3:
+                neutral_reviews.append(clean_review)
             else:
                 negative_reviews.append(clean_review)
 
