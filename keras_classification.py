@@ -21,7 +21,9 @@ GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
 MAX_SEQUENCE_LENGTH = 1000
 #MAX_NUM_WORDS = 20000
 VALIDATION_SPLIT = 0.2
-WORD2VEC = False
+BATCH_SIZE = 32
+EPOCHS = 2
+WORD2VEC = True
 
 texts = []
 labels = []
@@ -114,7 +116,7 @@ embedding_layer = Embedding(len(word_index) + 1,
                             input_length=MAX_SEQUENCE_LENGTH,
                             trainable=False)
 
-
+# train a 1D convnet with global maxpooling
 sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32')
 embedded_sequences = embedding_layer(sequence_input)
 x = Conv1D(128, 5, activation='relu')(embedded_sequences)
@@ -136,10 +138,14 @@ model.compile(loss='categorical_crossentropy',
 
 print("start training...")
 tensorBoardCallback = TensorBoard(log_dir='./logs', write_graph=True)
-model.fit(x_train, y_train, validation_data=(x_val, y_val),
-          epochs=3, callbacks=[tensorBoardCallback], batch_size=128, verbose=2)
+model.fit(x_train, y_train,
+          validation_data=(x_val, y_val),
+          epochs=EPOCHS,
+          callbacks=[tensorBoardCallback],
+          batch_size=BATCH_SIZE,
+          verbose=1)
 
-model.save('keras_model.hdf5')
+model.save('./models/keras_model.hdf5')
 # Evaluation on the test set
 scores = model.evaluate(x_val, y_val, verbose=0)
 print("Accuracy: %.2f%%" % (scores[1]*100))

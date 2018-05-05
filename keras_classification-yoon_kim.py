@@ -17,6 +17,8 @@ from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import Embedding
 
+
+
 BASE_DIR = ''
 GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
 MAX_SEQUENCE_LENGTH = 1000
@@ -80,12 +82,15 @@ y_test = labels[-nb_validation_samples:]
 
 if WORD2VEC:
     # USE WORD2VEC WORD EMBEDDINGS
-    EMBEDDING_DIM = 300
+
     dp = DataPreprocessor()
     # use self trained word2vec embeddings based one the same data set
-    #embeddings_index = dp.get_embeddings_index('data/w2vmodel.bin')
+    EMBEDDING_DIM = 100
+    embeddings_index = dp.get_embeddings_index('data/w2vmodel.bin')
+
     # use pretrained word2vec embeddings from google
-    embeddings_index = dp.get_embeddings_index_from_google_model()
+    #EMBEDDING_DIM = 300
+    #embeddings_index = dp.get_embeddings_index_from_google_model()
 else:
     # USE PRETRAINED GLOVE WORD EMBEDDINGS (trained on 20 newsgroups)
     EMBEDDING_DIM = 100
@@ -108,53 +113,12 @@ for word, i in word_index.items():
 
 # set parameters:
 MAX_SEQUENCE_LEN = 1000
-BATCH_SIZE = 32
+BATCH_SIZE = 8
 FILTERS = 100
 KERNEL_SIZE = 3
 EPOCHS = 3
 HIDDEN_DIMS = 250
 P_DROPOUT = 0.5
-#embedding_size = 64
-#maxlen = 50
-#nb_feature_maps = 32
-#batch_size = 1
-#nb_classes = np.max(y_train) + 1
-
-"""
-model = Sequential()
-# embedding layer, convolutinal layer, max-pooling layer and softmax layer
-
-
-# embedding layer
-model.add(Embedding(input_dim=len(word_index) + 1,
-                    output_dim=EMBEDDING_DIM,
-                    weights=[embedding_matrix]))
-# convolutional layer
-model.add(Conv1D(FILTERS,
-                 KERNEL_SIZE,
-                 padding='same',
-                 activation='relu',
-                 strides=1))
-model.add(Dropout(0.5))
-model.add(Activation('relu'))
-# max-pooling layer
-model.add(GlobalMaxPooling1D())
-
-# softmax layer
-model.add(Dropout(0.5))
-model.add(Dense(len(labels_index), activation='softmax'))
-#model.add(Activation('softmax'))
-
-
-model.compile(loss='binary_crossentropy',
-              optimizer='adam',
-              metrics=['accuracy'])
-model.fit(x_train, y_train,
-          batch_size=BATCH_SIZE,
-          epochs=EPOCHS,
-          validation_data=(x_test, y_test))
-"""
-
 
 submodels = []
 for filter in (2, 3, 4):    # kernel sizes
@@ -184,19 +148,16 @@ print('Compiling model')
 model.compile(loss='binary_crossentropy',
               optimizer='adam',
               metrics=['accuracy'])
-"""
-model.fit(x_train, y_train,
+
+# Log to tensorboard
+tensorBoardCallback = TensorBoard(log_dir='./logs/sequential', write_graph=True)
+
+model.fit([x_train, x_train, x_train],
+          y_train,
           batch_size=BATCH_SIZE,
           epochs=EPOCHS,
-          validation_data=(x_test, y_test),
-          verbose=2)
-"""
-
-hist = model.fit([x_train, x_train, x_train],
-                     y_train,
-                     batch_size=BATCH_SIZE,
-                     epochs=EPOCHS,
-                     validation_data=([x_test, x_test, x_test], y_test),)
+          validation_data=([x_test, x_test, x_test], y_test),
+          verbose = 1)
 
 # Evaluation on the test set
 #scores = model.evaluate(x_test, y_test, batch_size=BATCH_SIZE)
