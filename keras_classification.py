@@ -121,7 +121,7 @@ sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32')
 embedded_sequences = embedding_layer(sequence_input)
 x = Conv1D(128, 5, activation='relu')(embedded_sequences)
 x = MaxPooling1D(5)(x)
-x = Dropout(0.5)(x)
+#x = Dropout(0.5)(x)
 x = Conv1D(128, 5, activation='relu')(x)
 x = MaxPooling1D(5)(x)
 x = Dropout(0.5)(x)
@@ -137,7 +137,7 @@ model.compile(loss='categorical_crossentropy',
               metrics=['accuracy'])
 
 print("start training...")
-tensorBoardCallback = TensorBoard(log_dir='./logs', write_graph=True)
+tensorBoardCallback = TensorBoard(log_dir='./logs/functional', write_graph=True)
 model.fit(x_train, y_train,
           validation_data=(x_val, y_val),
           epochs=EPOCHS,
@@ -147,6 +147,6 @@ model.fit(x_train, y_train,
 
 model.save('./models/keras_model.hdf5')
 # Evaluation on the test set
-scores = model.evaluate(x_val, y_val, verbose=0)
+scores = model.evaluate(x_val, y_val, verbose=1)
 print("Accuracy: %.2f%%" % (scores[1]*100))
 

@@ -43,8 +43,9 @@ positive_reviews = []
 negative_reviews = []
 for i, row in df.iterrows():
     #clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(row['Review Text']).lower()))
-    clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words, ' ', str(row['Review Text']).lower()))
-    #print(clean_review)
+    review = row['Title'] + ' ' + row['Review Text']
+    clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words, ' ', str(review).lower()))
+    print(clean_review)
     if row['Rating'] >= 3:
         positive_reviews.append(clean_review)
         labels.append(0)
@@ -82,15 +83,14 @@ y_test = labels[-nb_validation_samples:]
 
 if WORD2VEC:
     # USE WORD2VEC WORD EMBEDDINGS
-
     dp = DataPreprocessor()
     # use self trained word2vec embeddings based one the same data set
-    EMBEDDING_DIM = 100
-    embeddings_index = dp.get_embeddings_index('data/w2vmodel.bin')
+    #EMBEDDING_DIM = 100
+    #embeddings_index = dp.get_embeddings_index('data/w2vmodel.bin')
 
     # use pretrained word2vec embeddings from google
-    #EMBEDDING_DIM = 300
-    #embeddings_index = dp.get_embeddings_index_from_google_model()
+    EMBEDDING_DIM = 300
+    embeddings_index = dp.get_embeddings_index_from_google_model()
 else:
     # USE PRETRAINED GLOVE WORD EMBEDDINGS (trained on 20 newsgroups)
     EMBEDDING_DIM = 100
@@ -113,23 +113,24 @@ for word, i in word_index.items():
 
 # set parameters:
 MAX_SEQUENCE_LEN = 1000
-BATCH_SIZE = 8
-FILTERS = 100
-KERNEL_SIZE = 3
-EPOCHS = 3
+BATCH_SIZE = 16
+FILTERS = 2
+KERNEL_SIZES = (2, 3, 4)
+EPOCHS = 2
 HIDDEN_DIMS = 250
-P_DROPOUT = 0.5
+P_DROPOUT = 0.3
 
 submodels = []
-for filter in (2, 3, 4):    # kernel sizes
+for kernel_size in KERNEL_SIZES:    # kernel sizes
     submodel = Sequential()
     submodel.add(Embedding(len(word_index) + 1,
                            EMBEDDING_DIM,
                            weights=[embedding_matrix],
                            input_length=MAX_SEQUENCE_LENGTH,
                            trainable=False))
-    submodel.add(Conv1D(FILTERS,
-                        filter,
+
+    submodel.add(Conv1D(filters=FILTERS,
+                        kernel_size=kernel_size,
                         padding='valid',
                         activation='relu',
                         strides=1))
@@ -150,7 +151,7 @@ model.compile(loss='binary_crossentropy',
               metrics=['accuracy'])
 
 # Log to tensorboard
-tensorBoardCallback = TensorBoard(log_dir='./logs/sequential', write_graph=True)
+tensorBoardCallback = TensorBoard(log_dir='./logs/sequential_kim', write_graph=True)
 
 model.fit([x_train, x_train, x_train],
           y_train,
