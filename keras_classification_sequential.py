@@ -41,7 +41,7 @@ negative_reviews = []
 for i, row in df.iterrows():
     #clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(row['Review Text']).lower()))
     clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words, ' ', str(row['Review Text']).lower()))
-    print(clean_review)
+    #print(clean_review)
     if row['Rating'] >= 3:
         positive_reviews.append(clean_review)
         labels.append(0)
@@ -107,7 +107,7 @@ for word, i in word_index.items():
 # set parameters:
 #max_features = 5000
 MAX_SEQUENCE_LEN = 1000
-BATCH_SIZE = 32
+BATCH_SIZE = 16
 #embedding_dims = 50
 FILTERS = 250
 KERNEL_SIZE = 3

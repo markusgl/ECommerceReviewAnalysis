@@ -16,7 +16,7 @@ from keras.utils import to_categorical
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import Embedding
-
+from data_preprocessing import DataPreprocessor
 
 
 BASE_DIR = ''
@@ -28,6 +28,7 @@ WORD2VEC = True
 
 texts = []
 labels = []
+#labels_index = {'pos': 0, 'neutral': 1, 'neg': 2}  # dictionary mapping label name to numeric id
 labels_index = {'pos': 0, 'neg': 1}  # dictionary mapping label name to numeric id
 
 keep_words_and_punct = r"[^a-zA-Z?!.]|[.]{2,}"
@@ -39,6 +40,7 @@ df = pd.read_csv('data/review_data.csv')
 df.dropna(how="any", inplace=True)
 
 # split in to positive and negative reviews
+"""
 positive_reviews = []
 negative_reviews = []
 for i, row in df.iterrows():
@@ -52,9 +54,14 @@ for i, row in df.iterrows():
     else:
         negative_reviews.append(clean_review)
         labels.append(1)
+"""
 
+data_preprocessor = DataPreprocessor()
+#positive_reviews, neutral_reviews, negative_reviews, labels = data_preprocessor.separate_pos_neutral_neg()
+#texts = positive_reviews + neutral_reviews + negative_reviews
+positive_reviews, negative_reviews, labels = data_preprocessor.separate_pos_neg()
 texts = positive_reviews + negative_reviews
-#print(labels_index)
+print(len(texts))
 
 tokenizer = Tokenizer()
 tokenizer.fit_on_texts(texts)
@@ -85,12 +92,12 @@ if WORD2VEC:
     # USE WORD2VEC WORD EMBEDDINGS
     dp = DataPreprocessor()
     # use self trained word2vec embeddings based one the same data set
-    #EMBEDDING_DIM = 100
-    #embeddings_index = dp.get_embeddings_index('data/w2vmodel.bin')
+    EMBEDDING_DIM = 100
+    embeddings_index = dp.get_embeddings_index('models/w2vmodel.bin')
 
     # use pretrained word2vec embeddings from google
-    EMBEDDING_DIM = 300
-    embeddings_index = dp.get_embeddings_index_from_google_model()
+    #EMBEDDING_DIM = 300
+    #embeddings_index = dp.get_embeddings_index_from_google_model()
 else:
     # USE PRETRAINED GLOVE WORD EMBEDDINGS (trained on 20 newsgroups)
     EMBEDDING_DIM = 100
@@ -114,11 +121,11 @@ for word, i in word_index.items():
 # set parameters:
 MAX_SEQUENCE_LEN = 1000
 BATCH_SIZE = 16
-FILTERS = 2
-KERNEL_SIZES = (2, 3, 4)
-EPOCHS = 2
+FILTERS = 100
+KERNEL_SIZES = (3, 4, 5)
+EPOCHS = 3
 HIDDEN_DIMS = 250
-P_DROPOUT = 0.3
+P_DROPOUT = 0.25
 
 submodels = []
 for kernel_size in KERNEL_SIZES:    # kernel sizes
