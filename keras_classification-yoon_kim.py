@@ -21,13 +21,13 @@ from data_preprocessing import DataPreprocessor
 
 BASE_DIR = ''
 GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
-MAX_SEQUENCE_LENGTH = 1000
-#MAX_NUM_WORDS = 20000
+MAX_SEQUENCE_LENGTH = 120
 VALIDATION_SPLIT = 0.2
 WORD2VEC = True
+KEEP_WORDS = 1500
 
-texts = []
-labels = []
+#texts = []
+#labels = []
 #labels_index = {'pos': 0, 'neutral': 1, 'neg': 2}  # dictionary mapping label name to numeric id
 labels_index = {'pos': 0, 'neg': 1}  # dictionary mapping label name to numeric id
 
@@ -35,9 +35,9 @@ keep_words_and_punct = r"[^a-zA-Z?!.]|[.]{2,}"
 keep_words = r"[^a-zA-Z']|[.]{2,}"
 mult_whitespaces = "\s{2,}"
 
-df = pd.read_csv('data/review_data.csv')
+#df = pd.read_csv('data/review_data_tiny.csv')
 # df = pd.read_csv('data/review_data_small.csv')
-df.dropna(how="any", inplace=True)
+#df.dropna(how="any", inplace=True)
 
 # split in to positive and negative reviews
 """
@@ -61,18 +61,22 @@ data_preprocessor = DataPreprocessor()
 #texts = positive_reviews + neutral_reviews + negative_reviews
 positive_reviews, negative_reviews, labels = data_preprocessor.separate_pos_neg()
 texts = positive_reviews + negative_reviews
-print(len(texts))
 
-tokenizer = Tokenizer()
+tokenizer = Tokenizer(num_words=KEEP_WORDS)
 tokenizer.fit_on_texts(texts)
 sequences = tokenizer.texts_to_sequences(texts)
 
 word_index = tokenizer.word_index
 print('Found %s unique tokens.' % len(word_index))
+max_sequence_len = 0
+for sequence in sequences:
+    if len(sequence) > max_sequence_len:
+        max_sequence_len = len(sequence)
+print("max sequence len: %i" % max_sequence_len)
 data = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
 
-#labels = to_categorical(np.asarray(labels))
-labels = np.asarray(labels)
+labels = to_categorical(np.asarray(labels))
+#labels = np.asarray(labels)
 print('Shape of data tensor:', data.shape)
 print('Shape of label tensor:', labels.shape)
 
@@ -92,12 +96,12 @@ if WORD2VEC:
     # USE WORD2VEC WORD EMBEDDINGS
     dp = DataPreprocessor()
     # use self trained word2vec embeddings based one the same data set
-    EMBEDDING_DIM = 100
-    embeddings_index = dp.get_embeddings_index('models/w2vmodel.bin')
+    #EMBEDDING_DIM = 100
+    #embeddings_index = dp.get_embeddings_index('models/w2vmodel.bin')
 
     # use pretrained word2vec embeddings from google
-    #EMBEDDING_DIM = 300
-    #embeddings_index = dp.get_embeddings_index_from_google_model()
+    EMBEDDING_DIM = 300
+    embeddings_index = dp.get_embeddings_index_from_google_model()
 else:
     # USE PRETRAINED GLOVE WORD EMBEDDINGS (trained on 20 newsgroups)
     EMBEDDING_DIM = 100
@@ -110,6 +114,9 @@ else:
         embeddings_index[word] = coefs
     f.close()
 
+print(embeddings_index)
+
+# get the vector representation of the words
 embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
 for word, i in word_index.items():
     embedding_vector = embeddings_index.get(word)
@@ -119,11 +126,10 @@ for word, i in word_index.items():
 
 
 # set parameters:
-MAX_SEQUENCE_LEN = 1000
 BATCH_SIZE = 16
 FILTERS = 100
 KERNEL_SIZES = (3, 4, 5)
-EPOCHS = 3
+EPOCHS = 2
 HIDDEN_DIMS = 250
 P_DROPOUT = 0.25
 
@@ -152,6 +158,7 @@ model.add(Dropout(P_DROPOUT))
 model.add(Activation('relu'))
 model.add(Dense(1))
 model.add(Activation('sigmoid'))
+#model.add(Activation('softmax'))
 print('Compiling model')
 model.compile(loss='binary_crossentropy',
               optimizer='adam',

@@ -5,14 +5,15 @@ import matplotlib.pyplot as plt
 from nltk.tokenize import WhitespaceTokenizer
 from sklearn.decomposition import PCA
 import numpy as np
+from collections import Counter
 
 
 class DataPreprocessor:
 
     def separate_pos_neg(self):
-        keep_words_and_punct = r"[^a-zA-Z?!.]|[.]{2,}"
+        keep_words_and_punct = r"[^a-zA-Z0-9?!.]|[.]{2,}"
         keep_words = r"[^a-zA-Z]|[.]{2,}"
-        mult_whitespaces = "\s{3,}"
+        mult_whitespaces = "\s{2,}"
 
         df = pd.read_csv('data/review_data.csv')
         df.dropna(how="all", inplace=True)  # drop blank lines
@@ -21,7 +22,7 @@ class DataPreprocessor:
         negative_reviews = []
         labels = []
         for i, row in df.iterrows():
-            review = str(row['Title']) + ' ' + str(row['Review Text'])
+            review = str(row['Title']) + '. ' + str(row['Review Text'])
             clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
 
             if row['Rating'] >= 3:
@@ -47,7 +48,7 @@ class DataPreprocessor:
         neutral_reviews = []
         labels = []
         for i, row in df.iterrows():
-            review = str(row['Title']) + ' ' + str(row['Review Text'])
+            review = str(row['Title']) + '. ' + str(row['Review Text'])
             clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
             if row['Rating'] > 3:
                 positive_reviews.append(clean_review)
@@ -126,7 +127,7 @@ class DataPreprocessor:
         return embeddings_index
 
     def get_embeddings_index_from_google_model(self):
-        model = KeyedVectors.load_word2vec_format('C:/develop/Data/GoogleNews-vectors-negative300.bin', binary=True)
+        model = KeyedVectors.load_word2vec_format('./data/GoogleNews-vectors-negative300.bin', binary=True)
 
         embeddings_index = {}
         for word in range(len(model.wv.vocab)):
@@ -138,7 +139,7 @@ class DataPreprocessor:
     # Visualization using matplotlib and PCA
     def plot_model(self):
         #model = Word2Vec.load(model_path)
-        model = KeyedVectors.load_word2vec_format('C:/develop/Data/GoogleNews-vectors-negative300.bin',
+        model = KeyedVectors.load_word2vec_format('./data/GoogleNews-vectors-negative300.bin',
                                                   binary=True)
         X = model[model.wv.vocab]
         pca = PCA(n_components=2)
@@ -159,19 +160,31 @@ class DataPreprocessor:
         count_neu = 0
 
         for i, row in df.iterrows():
-            if row['Rating'] > 3:
+            if row['Rating'] >= 3:
                 count_pos += 1
-            elif row['Rating'] == 3:
-                count_neu += 1
+            #elif row['Rating'] == 3:
+            #    count_neu += 1
             else:
-                count_neg +=1
+                count_neg += 1
 
         print("Positive Reviews: %i" % count_pos)
         print("Negative Reviews: %i" % count_neg)
         print("Neutral Reviews: %i" % count_neu)
 
+    def count_reviews_length(self):
+        df = pd.read_csv('data/review_data.csv')
+        max_len = 0
 
-#DataPreprocessor().count_reviews()
+        for i, row in df.iterrows():
+            words = (str(row['Title']) + '. ' + str(row['Review Text'])).split()
+            print(words)
+            review_length = len(Counter(words))
+            if review_length > max_len:
+                max_len = review_length
+
+        print("max review length: %i" % max_len)
+
+#DataPreprocessor().count_reviews_length()
 #DataPreprocessor().train_word2vec()
 #DataPreprocessor().get_embedding_matrix('data/w2vmodel.bin')
 #DataPreprocessor().plot_model()

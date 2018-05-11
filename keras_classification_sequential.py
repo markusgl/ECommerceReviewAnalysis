@@ -18,7 +18,7 @@ from keras.layers import Embedding
 
 BASE_DIR = ''
 GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
-MAX_SEQUENCE_LENGTH = 1000
+MAX_SEQUENCE_LENGTH = 150
 #MAX_NUM_WORDS = 20000
 VALIDATION_SPLIT = 0.2
 WORD2VEC = True
