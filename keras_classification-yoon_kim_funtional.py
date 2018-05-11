@@ -27,35 +27,9 @@ VALIDATION_SPLIT = 0.2
 WORD2VEC = True
 KEEP_WORDS = 1500
 
-#texts = []
-#labels = []
 #labels_index = {'pos': 0, 'neutral': 1, 'neg': 2}  # dictionary mapping label name to numeric id
 labels_index = {'pos': 0, 'neg': 1}  # dictionary mapping label name to numeric id
 
-keep_words_and_punct = r"[^a-zA-Z?!.]|[.]{2,}"
-keep_words = r"[^a-zA-Z']|[.]{2,}"
-mult_whitespaces = "\s{2,}"
-
-#df = pd.read_csv('data/review_data_tiny.csv')
-# df = pd.read_csv('data/review_data_small.csv')
-#df.dropna(how="any", inplace=True)
-
-# split in to positive and negative reviews
-"""
-positive_reviews = []
-negative_reviews = []
-for i, row in df.iterrows():
-    #clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(row['Review Text']).lower()))
-    review = row['Title'] + ' ' + row['Review Text']
-    clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words, ' ', str(review).lower()))
-    print(clean_review)
-    if row['Rating'] >= 3:
-        positive_reviews.append(clean_review)
-        labels.append(0)
-    else:
-        negative_reviews.append(clean_review)
-        labels.append(1)
-"""
 
 data_preprocessor = DataPreprocessor()
 #positive_reviews, neutral_reviews, negative_reviews, labels = data_preprocessor.separate_pos_neutral_neg()
@@ -90,8 +64,8 @@ nb_validation_samples = int(VALIDATION_SPLIT * data.shape[0])
 
 x_train = data[:-nb_validation_samples]
 y_train = labels[:-nb_validation_samples]
-x_test = data[-nb_validation_samples:]
-y_test = labels[-nb_validation_samples:]
+x_val = data[-nb_validation_samples:]
+y_val = labels[-nb_validation_samples:]
 
 if WORD2VEC:
     # USE WORD2VEC WORD EMBEDDINGS
@@ -126,57 +100,38 @@ for word, i in word_index.items():
         embedding_matrix[i] = embedding_vector
 
 
-# set parameters:
-BATCH_SIZE = 16
-FILTERS = 100
-KERNEL_SIZES = (3, 4, 5)
-EPOCHS = 2
-HIDDEN_DIMS = 250
-P_DROPOUT = 0.25
+embedding_layer = Embedding(len(word_index) + 1,
+                            EMBEDDING_DIM,
+                            weights=[embedding_matrix],
+                            input_length=MAX_SEQUENCE_LENGTH,
+                            trainable=True)
 
-submodels = []
-for kernel_size in KERNEL_SIZES:    # kernel sizes
-    submodel = Sequential()
-    submodel.add(Embedding(len(word_index) + 1,
-                           EMBEDDING_DIM,
-                           weights=[embedding_matrix],
-                           input_length=MAX_SEQUENCE_LENGTH,
-                           trainable=False))
+convs = []
+filter_sizes = [3,4,5]
 
-    submodel.add(Conv1D(filters=FILTERS,
-                        kernel_size=kernel_size,
-                        padding='valid',
-                        activation='relu',
-                        strides=1))
-    submodel.add(GlobalMaxPooling1D())
-    submodels.append(submodel)
+sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32')
+embedded_sequences = embedding_layer(sequence_input)
 
+for fsz in filter_sizes:
+    l_conv = Conv1D(nb_filter=128,filter_length=fsz,activation='relu')(embedded_sequences)
+    l_pool = MaxPooling1D(5)(l_conv)
+    convs.append(l_pool)
 
-model = Sequential()
-model.add(Merge(submodels, mode="concat"))
-model.add(Dense(HIDDEN_DIMS, kernel_regularizer=regularizers.l2(0.01)))
-model.add(Dropout(P_DROPOUT))
-model.add(Activation('relu'))
-model.add(Dense(1))
-model.add(Activation('sigmoid'))
-#model.add(Activation('softmax'))
-print('Compiling model')
+l_merge = Merge(mode='concat', concat_axis=1)(convs)
+l_cov1 = Conv1D(128, 5, activation='relu')(l_merge)
+l_pool1 = MaxPooling1D(5)(l_cov1)
+l_cov2 = Conv1D(128, 5, activation='relu')(l_pool1)
+l_pool2 = MaxPooling1D(30)(l_cov2)
+l_flat = Flatten()(l_pool2)
+l_dense = Dense(128, activation='relu')(l_flat)
+preds = Dense(2, activation='softmax')(l_dense)
+
+model = Model(sequence_input, preds)
 model.compile(loss='categorical_crossentropy',
-              optimizer='adam',
-              metrics=['accuracy'])
+              optimizer='rmsprop',
+              metrics=['acc'])
 
-# Log to tensorboard
-tensorBoardCallback = TensorBoard(log_dir='./logs/sequential_kim', write_graph=True)
-
-model.fit([x_train, x_train, x_train],
-          y_train,
-          batch_size=BATCH_SIZE,
-          epochs=EPOCHS,
-          validation_data=([x_test, x_test, x_test], y_test),
-          verbose = 1)
-
-# Evaluation on the test set
-#scores = model.evaluate(x_test, y_test, batch_size=BATCH_SIZE)
-#print("Accuracy: %.2f%%" % (scores[1]*100))
-# TODO confusion matrix
-
+print("model fitting - more complex convolutional neural network")
+model.summary()
+model.fit(x_train, y_train, validation_data=(x_val, y_val),
+          nb_epoch=2, batch_size=16)
