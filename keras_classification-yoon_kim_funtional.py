@@ -24,8 +24,10 @@ BASE_DIR = ''
 GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
 MAX_SEQUENCE_LENGTH = 120
 VALIDATION_SPLIT = 0.2
-WORD2VEC = True
-KEEP_WORDS = 1500
+WORD2VEC = False
+KEEP_WORDS = 1000
+EPOCHS = 2
+BATCH_SIZE = 16
 
 #labels_index = {'pos': 0, 'neutral': 1, 'neg': 2}  # dictionary mapping label name to numeric id
 labels_index = {'pos': 0, 'neg': 1}  # dictionary mapping label name to numeric id
@@ -67,6 +69,7 @@ y_train = labels[:-nb_validation_samples]
 x_val = data[-nb_validation_samples:]
 y_val = labels[-nb_validation_samples:]
 
+print('Getting pre-trained word vectors...')
 if WORD2VEC:
     # USE WORD2VEC WORD EMBEDDINGS
     dp = DataPreprocessor()
@@ -92,6 +95,7 @@ else:
 print(embeddings_index)
 
 # get the vector representation of the words
+print('Map vectors to embeddings...')
 embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
 for word, i in word_index.items():
     embedding_vector = embeddings_index.get(word)
@@ -99,7 +103,7 @@ for word, i in word_index.items():
         # words not found in embedding index will be all-zeros.
         embedding_matrix[i] = embedding_vector
 
-
+print('Building embedding layer...')
 embedding_layer = Embedding(len(word_index) + 1,
                             EMBEDDING_DIM,
                             weights=[embedding_matrix],
@@ -118,20 +122,23 @@ for fsz in filter_sizes:
     convs.append(l_pool)
 
 l_merge = Merge(mode='concat', concat_axis=1)(convs)
-l_cov1 = Conv1D(128, 5, activation='relu')(l_merge)
+x = Dropout(0.5)(l_merge)
+l_cov1 = Conv1D(128, 5, activation='relu')(x)
 l_pool1 = MaxPooling1D(5)(l_cov1)
-l_cov2 = Conv1D(128, 5, activation='relu')(l_pool1)
-l_pool2 = MaxPooling1D(30)(l_cov2)
-l_flat = Flatten()(l_pool2)
+#l_cov2 = Conv1D(128, 5, activation='relu')(l_pool1)
+#l_pool2 = MaxPooling1D(30)(l_cov2)
+#l_flat = Flatten()(l_pool2)
+l_flat = Flatten()(l_pool1)
 l_dense = Dense(128, activation='relu')(l_flat)
 preds = Dense(2, activation='softmax')(l_dense)
 
 model = Model(sequence_input, preds)
-model.compile(loss='categorical_crossentropy',
-              optimizer='rmsprop',
+model.compile(loss='binary_crossentropy',
+              #optimizer='rmsprop',
+              optimizer='adam',
               metrics=['acc'])
 
-print("model fitting - more complex convolutional neural network")
+print("Fitting model...")
 model.summary()
 model.fit(x_train, y_train, validation_data=(x_val, y_val),
-          nb_epoch=2, batch_size=16)
+          nb_epoch=EPOCHS, batch_size=BATCH_SIZE)
