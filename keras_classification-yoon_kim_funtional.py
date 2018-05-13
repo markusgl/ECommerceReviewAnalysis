@@ -134,4 +134,4 @@ model.compile(loss='categorical_crossentropy',
 print("model fitting - more complex convolutional neural network")
 model.summary()
 model.fit(x_train, y_train, validation_data=(x_val, y_val),
-          nb_epoch=2, batch_size=16)
+          nb_epoch=2, batch_size=16, verbose=1)
