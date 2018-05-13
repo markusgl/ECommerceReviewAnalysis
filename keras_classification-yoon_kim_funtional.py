@@ -141,4 +141,4 @@ model.compile(loss='binary_crossentropy',
 print("Fitting model...")
 model.summary()
 model.fit(x_train, y_train, validation_data=(x_val, y_val),
-          nb_epoch=EPOCHS, batch_size=BATCH_SIZE)
+          nb_epoch=EPOCHS, batch_size=BATCH_SIZE, verbose=1)
