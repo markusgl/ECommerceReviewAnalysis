@@ -6,7 +6,10 @@ from nltk.tokenize import WhitespaceTokenizer
 from sklearn.decomposition import PCA
 import numpy as np
 from collections import Counter
-
+import matplotlib.pyplot as plt
+import operator
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 
 class DataPreprocessor:
 
@@ -16,23 +19,29 @@ class DataPreprocessor:
         mult_whitespaces = "\s{2,}"
 
         df = pd.read_csv('data/review_data.csv')
-        df.dropna(how="all", inplace=True)  # drop blank lines
+        df.dropna(how="any", inplace=True)  # drop blank lines
         # df = pd.read_csv('data/review_data_small.csv')
-        positive_reviews = []
-        negative_reviews = []
+
+        texts = []
         labels = []
+        stop_words = set(stopwords.words('english'))
+
         for i, row in df.iterrows():
             review = str(row['Title']) + '. ' + str(row['Review Text'])
-            clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
+            #clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
+            clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words, ' ', str(review).lower()))
+            tokens = word_tokenize(clean_review)
+            filtered_sentence = [word for word in tokens if not word in stop_words]
+            sentences = " ".join(filtered_sentence)
 
             if row['Rating'] >= 3:
-                positive_reviews.append(clean_review)
+                texts.append(sentences)
                 labels.append(0)
             else:
-                negative_reviews.append(clean_review)
+                texts.append(sentences)
                 labels.append(1)
 
-        return positive_reviews, negative_reviews, labels
+        return texts, labels
 
     def separate_pos_neutral_neg(self):
         keep_words_and_punct = r"[^a-zA-Z?!.]|[.]{2,}"
@@ -40,7 +49,7 @@ class DataPreprocessor:
         mult_whitespaces = "\s{3,}"
 
         df = pd.read_csv('data/review_data.csv')
-        df.dropna(how="all", inplace=True)  # drop blank lines
+        df.dropna(how="any", inplace=True)  # drop blank lines
 
         # df = pd.read_csv('data/review_data_small.csv')
         positive_reviews = []
@@ -188,3 +197,56 @@ class DataPreprocessor:
 #DataPreprocessor().train_word2vec()
 #DataPreprocessor().get_embedding_matrix('data/w2vmodel.bin')
 #DataPreprocessor().plot_model()
+DataPreprocessor().separate_pos_neg()
+
+"""
+pos_list, neg_list, labels = DataPreprocessor().separate_pos_neg()
+
+word_index = {}
+pos_token = {}
+
+pos_token_list = []
+pos_word_index = {}
+for sequence in pos_list:
+    tokens = WhitespaceTokenizer().tokenize(sequence)
+    for token in tokens:
+        pos_token_list.append(token)
+
+        if token in pos_word_index:
+            pos_word_index[token] += 1
+        else:
+            pos_word_index[token] = 1
+
+
+neg_token_list = []
+neg_word_index = {}
+for sequence in neg_list:
+    tokens = WhitespaceTokenizer().tokenize(sequence)
+    for token in tokens:
+        neg_token_list.append(token)
+
+        if token in neg_word_index:
+            neg_word_index[token] += 1
+        else:
+            neg_word_index[token] = 1
+
+
+sorted_pos = sorted(pos_word_index.items(), key=operator.itemgetter(1), reverse=True)
+sorted_neg = sorted(neg_word_index.items(), key=operator.itemgetter(1), reverse=True)
+
+print(sorted_pos)
+print(sorted_neg)
+
+
+plt.scatter(len(pos_token_list), len(pos_token_list))
+
+for word in pos_token_list:
+    i = pos_token_list.count(word)
+    plt.annotate(word, xy=(i, i))
+
+plt.xlabel('words')
+plt.ylabel('frequency')
+plt.title('Wortverteilung')
+
+plt.show()
+"""
