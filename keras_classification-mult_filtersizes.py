@@ -1,10 +1,6 @@
 import os
-from keras import Input
-from keras.engine import Model
 from keras.models import Sequential
-from keras.layers import Dense, Conv1D, MaxPooling1D, GlobalMaxPooling1D, Activation, Conv2D, MaxPooling2D, Merge, \
-    Reshape, Convolution2D
-from keras.layers import Convolution1D, Flatten, Dropout
+from keras.layers import Dense, Conv1D, GlobalMaxPooling1D, Activation, Merge, Dropout
 from keras.layers.embeddings import Embedding
 from keras.callbacks import TensorBoard
 from data_preprocessing import DataPreprocessor
@@ -12,8 +8,6 @@ import numpy as np
 from keras.utils import to_categorical
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
-from keras.layers import Embedding
-from data_preprocessing import DataPreprocessor
 from keras import regularizers
 import pickle
 
@@ -46,8 +40,6 @@ for sequence in sequences:
 print("max sequence len: %i" % max_sequence_len)
 
 data = pad_sequences(sequences, maxlen=max_sequence_len)
-
-
 labels = to_categorical(np.asarray(labels))
 #labels = np.asarray(labels)
 print('Shape of data tensor:', data.shape)
@@ -62,8 +54,8 @@ nb_validation_samples = int(VALIDATION_SPLIT * data.shape[0])
 
 x_train = data[:-nb_validation_samples]
 y_train = labels[:-nb_validation_samples]
-x_test = data[-nb_validation_samples:]
-y_test = labels[-nb_validation_samples:]
+x_val = data[-nb_validation_samples:]
+y_val = labels[-nb_validation_samples:]
 
 if WORD2VEC:
     # USE WORD2VEC WORD EMBEDDINGS
@@ -111,11 +103,11 @@ print(embedding_matrix)
 
 # set parameters:
 BATCH_SIZE = 16
-FILTERS = 100
+FILTERS = 250
 KERNEL_SIZES = (3, 4, 5)
-EPOCHS = 2
+EPOCHS = 3
 HIDDEN_DIMS = 250
-P_DROPOUT = 0.25
+P_DROPOUT = 0.5
 
 submodels = []
 for kernel_size in KERNEL_SIZES:
@@ -125,7 +117,7 @@ for kernel_size in KERNEL_SIZES:
                            weights=[embedding_matrix],
                            input_length=max_sequence_len,
                            trainable=False))
-
+    submodel.add(Dropout(P_DROPOUT))
     submodel.add(Conv1D(filters=FILTERS,
                         kernel_size=kernel_size,
                         padding='valid',
@@ -157,8 +149,8 @@ model.fit([x_train, x_train, x_train],
           y_train,
           batch_size=BATCH_SIZE,
           epochs=EPOCHS,
-          validation_data=([x_test, x_test, x_test], y_test),
-          verbose = 1)
+          validation_data=([x_val, x_val, x_val], y_val),
+          verbose=1)
 model.summary()
 
 
