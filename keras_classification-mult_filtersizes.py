@@ -16,8 +16,8 @@ BASE_DIR = ''
 GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
 MAX_SEQUENCE_LENGTH = 1000
 VALIDATION_SPLIT = 0.2
-WORD2VEC = False
-KEEP_WORDS = 1500
+WORD2VEC = True
+KEEP_WORDS = 2000
 
 #labels_index = {'pos': 0, 'neutral': 1, 'neg': 2}  # dictionary mapping label name to numeric id
 labels_index = {'pos': 0, 'neg': 1}  # dictionary mapping label name to numeric id
@@ -103,7 +103,7 @@ print(embedding_matrix)
 
 # set parameters:
 BATCH_SIZE = 16
-FILTERS = 250
+FILTERS = 300
 KERNEL_SIZES = (3, 4, 5)
 EPOCHS = 3
 HIDDEN_DIMS = 250
@@ -150,12 +150,13 @@ model.fit([x_train, x_train, x_train],
           batch_size=BATCH_SIZE,
           epochs=EPOCHS,
           validation_data=([x_val, x_val, x_val], y_val),
-          verbose=1)
+          verbose=2)
 model.summary()
 
 
 # Evaluation on the test set
-#scores = model.evaluate(x_test, y_test, batch_size=BATCH_SIZE)
-#print("Accuracy: %.2f%%" % (scores[1]*100))
+scores = model.evaluate(x_val, y_val, verbose=0, batch_size=BATCH_SIZE)
+print("Accuracy: %.2f%%" % (scores[1]*100))
+print("Loss: %.2f%%" % (scores[0]*100))
 # TODO confusion matrix
 

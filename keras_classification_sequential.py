@@ -1,10 +1,10 @@
-import numpy
+import itertools
 import os
 from keras.models import Sequential
 from keras.layers import Dense, Conv1D, GlobalMaxPooling1D, Activation, Dropout
 from keras.layers.embeddings import Embedding
 from keras.callbacks import TensorBoard
-from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import MinMaxScaler
 
 from data_preprocessing import DataPreprocessor
 import numpy as np
@@ -12,13 +12,15 @@ from keras.utils import to_categorical
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 import pickle
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 
 BASE_DIR = ''
 GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
-MAX_SEQUENCE_LENGTH = 150
-MAX_NUM_WORDS = 1500
+#MAX_SEQUENCE_LENGTH = 150
+#MAX_NUM_WORDS = 3000
 VALIDATION_SPLIT = 0.2
-WORD2VEC = False
+WORD2VEC = True
 
 labels_index = {'pos': 0, 'neg': 1}
 data_preprocessor = DataPreprocessor()
@@ -29,8 +31,15 @@ tokenizer.fit_on_texts(texts)
 sequences = tokenizer.texts_to_sequences(texts)
 
 word_index = tokenizer.word_index
+print(word_index)
 print('Found %s unique tokens.' % len(word_index))
-data = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
+max_sequence_len = 0
+for sequence in sequences:
+    if len(sequence) > max_sequence_len:
+        max_sequence_len = len(sequence)
+print("max sequence len: %i" % max_sequence_len)
+
+data = pad_sequences(sequences, maxlen=max_sequence_len)
 labels = to_categorical(np.asarray(labels))
 print('Shape of data tensor:', data.shape)
 print('Shape of label tensor:', labels.shape)
@@ -47,13 +56,17 @@ y_train = labels[:-nb_validation_samples]
 x_val = data[-nb_validation_samples:]
 y_val = labels[-nb_validation_samples:]
 
+print(x_train)
 if WORD2VEC:
     # USE WORD2VEC WORD EMBEDDINGS
-    EMBEDDING_DIM = 300
     data_preprocessor = DataPreprocessor()
+
     # use self trained word2vec embeddings based one the same data set
-    #embeddings_index = dp.get_embeddings_index('data/w2vmodel.bin')
+    #EMBEDDING_DIM = 100
+    #embeddings_index = data_preprocessor.get_embeddings_index('data/w2vmodel.bin')
+
     # use pretrained word2vec embeddings from google
+    EMBEDDING_DIM = 300
     embeddings_index = data_preprocessor.get_embeddings_index_from_google_model()
 else:
     # USE PRETRAINED GLOVE WORD EMBEDDINGS (trained on 20 newsgroups)
@@ -85,17 +98,17 @@ for word, i in word_index.items():
 
 # set parameters:
 BATCH_SIZE = 16
-FILTERS = 250
+FILTERS = 300
 KERNEL_SIZE = 3
 HIDDEN_DIMS = 250
-EPOCHS = 3
+EPOCHS = 5
 P_DROPOUT = 0.5
 
 model = Sequential()
 model.add(Embedding(len(word_index) + 1,
                     EMBEDDING_DIM,
                     weights=[embedding_matrix],
-                    input_length=MAX_SEQUENCE_LENGTH))
+                    input_length=max_sequence_len))
 
 model.add(Dropout(P_DROPOUT))
 model.add(Conv1D(FILTERS,
@@ -132,5 +145,4 @@ model.fit(x_train, y_train,
 scores = model.evaluate(x_val, y_val, verbose=0, batch_size=BATCH_SIZE)
 print("Accuracy: %.2f%%" % (scores[1]*100))
 print("Loss: %.2f%%" % (scores[0]*100))
-# TODO confusion matrix
 

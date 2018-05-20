@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import operator
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+import pickle
 
 class DataPreprocessor:
 
@@ -26,11 +27,16 @@ class DataPreprocessor:
         labels = []
         stop_words = set(stopwords.words('english'))
 
+        #file = open('data/duplicate_words', 'rb')
+        #duplicate_words = pickle.load(file)
+        #file.close()
+
         for i, row in df.iterrows():
             review = str(row['Title']) + '. ' + str(row['Review Text'])
             #clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
             clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words, ' ', str(review).lower()))
             tokens = word_tokenize(clean_review)
+            #filtered_sentence = [word for word in tokens if not word in stop_words and not word in duplicate_words]
             filtered_sentence = [word for word in tokens if not word in stop_words]
             sentences = " ".join(filtered_sentence)
 
@@ -136,7 +142,7 @@ class DataPreprocessor:
         return embeddings_index
 
     def get_embeddings_index_from_google_model(self):
-        model = KeyedVectors.load_word2vec_format('C:/develop/Data/GoogleNews-vectors-negative300.bin', binary=True)
+        model = KeyedVectors.load_word2vec_format('C:/develop/Data/GoogleNews-vectors-negative300.bin', binary=True, limit=15000)
 
         embeddings_index = {}
         for word in range(len(model.wv.vocab)):
@@ -147,15 +153,17 @@ class DataPreprocessor:
 
     # Visualization using matplotlib and PCA
     def plot_model(self):
-        #model = Word2Vec.load(model_path)
-        model = KeyedVectors.load_word2vec_format('./data/GoogleNews-vectors-negative300.bin',
-                                                  binary=True)
+        model = Word2Vec.load('models/w2vmodel.bin')
+        #model = KeyedVectors.load_word2vec_format('./data/GoogleNews-vectors-negative300.bin', binary=True)
+        #model = KeyedVectors.load_word2vec_format('models/w2vmodel.bin')
+
         X = model[model.wv.vocab]
         pca = PCA(n_components=2)
         result = pca.fit_transform(X)
 
         plt.scatter(result[:, 0], result[:, 1])
         words = list(model.wv.vocab)
+        print(words)
         for i, word in enumerate(words):
             plt.annotate(word, xy=(result[i, 0], result[i, 1]))
 
@@ -193,60 +201,73 @@ class DataPreprocessor:
 
         print("max review length: %i" % max_len)
 
+    def count_word_occurences(self):
+        text, labels = DataPreprocessor().separate_pos_neg()
+        #print(len(labels))
+        pos_list = []
+        neg_list = []
+        for sequence in text:
+            if labels[text.index(sequence)] == 0:
+                pos_list.append(sequence)
+            else:
+                neg_list.append(sequence)
+
+        pos_token_list = []
+        pos_word_index = {}
+        for sequence in pos_list:
+            tokens = WhitespaceTokenizer().tokenize(sequence)
+
+            for token in tokens:
+                pos_token_list.append(token)
+
+                if token in pos_word_index.keys():
+                    pos_word_index[token] += 1
+                else:
+                    pos_word_index[token] = 1
+
+        neg_token_list = []
+        neg_word_index = {}
+        for sequence in neg_list:
+            tokens = WhitespaceTokenizer().tokenize(sequence)
+            for token in tokens:
+                neg_token_list.append(token)
+
+                if token in neg_word_index:
+                    neg_word_index[token] += 1
+                else:
+                    neg_word_index[token] = 1
+
+        sorted_pos = sorted(pos_word_index.items(), key=operator.itemgetter(1), reverse=True)
+        sorted_neg = sorted(neg_word_index.items(), key=operator.itemgetter(1), reverse=True)
+        print(sorted_pos)
+        print(sorted_neg)
+
+        duplicate_list = []
+        for token in pos_token_list:
+            if token in neg_token_list:
+                duplicate_list.append(token)
+
+        #file = open('data/duplicate_words', 'wb')
+        #pickle.dump(duplicate_list, file)
+        #file.close()
+        #print(duplicate_list)
+
+
+        #sorted_pos_short = {}
+        #for i in range(10):
+        #    sorted_pos_short[sorted_pos[i]] =
+        #print(sorted_pos_short)
+        """
+        plt.bar(range(len(sorted_pos)), list(sorted_pos.values()), align='center')
+        plt.xticks(range(len(sorted_pos)), list(sorted_pos.keys()))
+        plt.show()
+        """
+
+
 #DataPreprocessor().count_reviews_length()
 #DataPreprocessor().train_word2vec()
 #DataPreprocessor().get_embedding_matrix('data/w2vmodel.bin')
 #DataPreprocessor().plot_model()
-DataPreprocessor().separate_pos_neg()
+#DataPreprocessor().separate_pos_neg()
+DataPreprocessor().count_word_occurences()
 
-"""
-pos_list, neg_list, labels = DataPreprocessor().separate_pos_neg()
-
-word_index = {}
-pos_token = {}
-
-pos_token_list = []
-pos_word_index = {}
-for sequence in pos_list:
-    tokens = WhitespaceTokenizer().tokenize(sequence)
-    for token in tokens:
-        pos_token_list.append(token)
-
-        if token in pos_word_index:
-            pos_word_index[token] += 1
-        else:
-            pos_word_index[token] = 1
-
-
-neg_token_list = []
-neg_word_index = {}
-for sequence in neg_list:
-    tokens = WhitespaceTokenizer().tokenize(sequence)
-    for token in tokens:
-        neg_token_list.append(token)
-
-        if token in neg_word_index:
-            neg_word_index[token] += 1
-        else:
-            neg_word_index[token] = 1
-
-
-sorted_pos = sorted(pos_word_index.items(), key=operator.itemgetter(1), reverse=True)
-sorted_neg = sorted(neg_word_index.items(), key=operator.itemgetter(1), reverse=True)
-
-print(sorted_pos)
-print(sorted_neg)
-
-
-plt.scatter(len(pos_token_list), len(pos_token_list))
-
-for word in pos_token_list:
-    i = pos_token_list.count(word)
-    plt.annotate(word, xy=(i, i))
-
-plt.xlabel('words')
-plt.ylabel('frequency')
-plt.title('Wortverteilung')
-
-plt.show()
-"""
