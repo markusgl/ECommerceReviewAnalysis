@@ -237,29 +237,71 @@ class DataPreprocessor:
                 else:
                     neg_word_index[token] = 1
 
+        amount_unique_pos_tokens = len(pos_word_index.keys())
+        amount_unique_neg_tokens = len(neg_word_index.keys())
+
         sorted_pos = sorted(pos_word_index.items(), key=operator.itemgetter(1), reverse=True)
         sorted_neg = sorted(neg_word_index.items(), key=operator.itemgetter(1), reverse=True)
-        print(sorted_pos)
-        print(sorted_neg)
+        #print(sorted_pos)
+        #print(sorted_neg)
 
+        #print(len(pos_token_list))
+        sorted_pos_short = {}
+        sorted_neg_short = {}
+        for i in range(10):
+            tuple_pos = sorted_pos[i]
+            sorted_pos_short[tuple_pos[0]] = (tuple_pos[1] / len(pos_token_list))*100
+            tupple_neg = sorted_neg[i]
+            sorted_neg_short[tupple_neg[0]] = (tupple_neg[1] / len(neg_token_list))*100
+
+
+        """
         duplicate_list = []
         for token in pos_token_list:
             if token in neg_token_list:
                 duplicate_list.append(token)
-
+        """
         #file = open('data/duplicate_words', 'wb')
         #pickle.dump(duplicate_list, file)
         #file.close()
         #print(duplicate_list)
 
 
-        #sorted_pos_short = {}
-        #for i in range(10):
-        #    sorted_pos_short[sorted_pos[i]] =
-        #print(sorted_pos_short)
+        plt.bar(range(len(sorted_pos_short)), list(sorted_pos_short.values()), align='center', color='b')
+        plt.xlabel('Wörter')
+        plt.ylabel('Vorkommen in Prozent')
+        plt.title('Zehn häufigsten Wörter in Positivliste')
+        plt.xticks(range(len(sorted_pos_short)), list(sorted_pos_short.keys()))
+        plt.savefig('wordcount_pos.png')
+        plt.show()
+
+        plt.bar(range(len(sorted_neg_short)), list(sorted_neg_short.values()), align='center', color='r')
+        plt.xlabel('Wörter')
+        plt.ylabel('Vorkommen in Prozent')
+        plt.title('Zehn häufigsten Wörter in Negativliste')
+        plt.xticks(range(len(sorted_neg_short)), list(sorted_neg_short.keys()))
+        plt.savefig('wordcount_neg.png')
+        plt.show()
+
         """
-        plt.bar(range(len(sorted_pos)), list(sorted_pos.values()), align='center')
-        plt.xticks(range(len(sorted_pos)), list(sorted_pos.keys()))
+        duplicate_pos_short = {}
+        duplicate_neg_short = {}
+        for key in sorted_pos_short.keys():
+            if key in sorted_neg_short.keys():
+                duplicate_pos_short[key] = sorted_pos_short[key]
+                duplicate_neg_short[key] = sorted_neg_short[key]
+        print(duplicate_pos_short)
+        print(duplicate_neg_short)
+
+        X = np.arange(5)
+        plt.bar(X + 0.00, list(duplicate_pos_short.values()), width=0.30, color='b')
+        plt.bar(X + 0.30, list(duplicate_neg_short.values()), width=0.30, color='r')
+        plt.xlabel('Wörter')
+        plt.ylabel('Vorkommen in Prozent')
+        plt.title('Zehn häufigsten Wörter in beiden Listen')
+        #plt.set_xticks(X + 0.25 / 2)
+        plt.xticks(X + 0.30 / 2, list(duplicate_neg_short.keys()))
+        plt.savefig('wordcount_pos_neg.png', format='png')
         plt.show()
         """
 
