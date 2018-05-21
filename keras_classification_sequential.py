@@ -1,9 +1,10 @@
 import itertools
 import os
 from keras.models import Sequential
-from keras.layers import Dense, Conv1D, GlobalMaxPooling1D, Activation, Dropout
+from keras.layers import Dense, Conv1D, GlobalMaxPooling1D, Activation, Dropout, BatchNormalization
 from keras.layers.embeddings import Embedding
 from keras.callbacks import TensorBoard
+from keras.optimizers import Adam
 from sklearn.preprocessing import MinMaxScaler
 
 from data_preprocessing import DataPreprocessor
@@ -56,7 +57,6 @@ y_train = labels[:-nb_validation_samples]
 x_val = data[-nb_validation_samples:]
 y_val = labels[-nb_validation_samples:]
 
-print(x_train)
 if WORD2VEC:
     # USE WORD2VEC WORD EMBEDDINGS
     data_preprocessor = DataPreprocessor()
@@ -97,11 +97,11 @@ for word, i in word_index.items():
 
 
 # set parameters:
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 FILTERS = 300
 KERNEL_SIZE = 3
 HIDDEN_DIMS = 250
-EPOCHS = 5
+EPOCHS = 10
 P_DROPOUT = 0.5
 
 model = Sequential()
@@ -110,7 +110,8 @@ model.add(Embedding(len(word_index) + 1,
                     weights=[embedding_matrix],
                     input_length=max_sequence_len))
 
-model.add(Dropout(P_DROPOUT))
+#model.add(Dropout(P_DROPOUT))
+model.add(BatchNormalization())
 model.add(Conv1D(FILTERS,
                  KERNEL_SIZE,
                  padding='valid',
@@ -130,7 +131,7 @@ model.add(Activation('sigmoid'))
 tensorBoardCallback = TensorBoard(log_dir='./logs/sequential', write_graph=True)
 
 model.compile(loss='binary_crossentropy',
-              optimizer='adam',
+              optimizer=Adam(lr=0.003),
               metrics=['accuracy'])
 
 model.fit(x_train, y_train,

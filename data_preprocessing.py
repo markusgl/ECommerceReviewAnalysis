@@ -30,6 +30,7 @@ class DataPreprocessor:
         #file = open('data/duplicate_words', 'rb')
         #duplicate_words = pickle.load(file)
         #file.close()
+        duplicate_words = ['dress', 'size', 'top', 'fit', 'like']
 
         for i, row in df.iterrows():
             review = str(row['Title']) + '. ' + str(row['Review Text'])
@@ -39,12 +40,13 @@ class DataPreprocessor:
             #filtered_sentence = [word for word in tokens if not word in stop_words and not word in duplicate_words]
             filtered_sentence = [word for word in tokens if not word in stop_words]
             sentences = " ".join(filtered_sentence)
+            #print(sentences)
 
             if row['Rating'] >= 3:
-                texts.append(sentences)
+                texts.append(clean_review)
                 labels.append(0)
             else:
-                texts.append(sentences)
+                texts.append(clean_review)
                 labels.append(1)
 
         return texts, labels
@@ -242,8 +244,8 @@ class DataPreprocessor:
 
         sorted_pos = sorted(pos_word_index.items(), key=operator.itemgetter(1), reverse=True)
         sorted_neg = sorted(neg_word_index.items(), key=operator.itemgetter(1), reverse=True)
-        #print(sorted_pos)
-        #print(sorted_neg)
+        print(sorted_pos)
+        print(sorted_neg)
 
         #print(len(pos_token_list))
         sorted_pos_short = {}
@@ -266,13 +268,13 @@ class DataPreprocessor:
         #file.close()
         #print(duplicate_list)
 
-
+        """
         plt.bar(range(len(sorted_pos_short)), list(sorted_pos_short.values()), align='center', color='b')
         plt.xlabel('Wörter')
         plt.ylabel('Vorkommen in Prozent')
         plt.title('Zehn häufigsten Wörter in Positivliste')
         plt.xticks(range(len(sorted_pos_short)), list(sorted_pos_short.keys()))
-        plt.savefig('wordcount_pos.png')
+        plt.savefig('wordcount_pos_wo_clean.png')
         plt.show()
 
         plt.bar(range(len(sorted_neg_short)), list(sorted_neg_short.values()), align='center', color='r')
@@ -280,36 +282,31 @@ class DataPreprocessor:
         plt.ylabel('Vorkommen in Prozent')
         plt.title('Zehn häufigsten Wörter in Negativliste')
         plt.xticks(range(len(sorted_neg_short)), list(sorted_neg_short.keys()))
-        plt.savefig('wordcount_neg.png')
+        plt.savefig('wordcount_neg_wo_clean.png')
         plt.show()
 
         """
+
         duplicate_pos_short = {}
         duplicate_neg_short = {}
         for key in sorted_pos_short.keys():
             if key in sorted_neg_short.keys():
                 duplicate_pos_short[key] = sorted_pos_short[key]
                 duplicate_neg_short[key] = sorted_neg_short[key]
-        print(duplicate_pos_short)
-        print(duplicate_neg_short)
+        #print(duplicate_pos_short)
+        #print(duplicate_neg_short)
 
-        X = np.arange(5)
-        plt.bar(X + 0.00, list(duplicate_pos_short.values()), width=0.30, color='b')
-        plt.bar(X + 0.30, list(duplicate_neg_short.values()), width=0.30, color='r')
+        X = np.arange(len(duplicate_neg_short.keys()))
+        pos_bar = plt.bar(X + 0.10, list(duplicate_pos_short.values()), width=0.30, color='b')
+        neg_bar = plt.bar(X + 0.40, list(duplicate_neg_short.values()), width=0.30, color='r')
         plt.xlabel('Wörter')
         plt.ylabel('Vorkommen in Prozent')
         plt.title('Zehn häufigsten Wörter in beiden Listen')
         #plt.set_xticks(X + 0.25 / 2)
-        plt.xticks(X + 0.30 / 2, list(duplicate_neg_short.keys()))
-        plt.savefig('wordcount_pos_neg.png', format='png')
+        plt.xticks(X + 0.25 / 2, list(duplicate_neg_short.keys()))
+        plt.legend((pos_bar[0], neg_bar[0]), ('Positiv', 'Negativ'), loc='upper right')
+        plt.savefig('wordcount_pos_neg_wo_clean.png', format='png')
         plt.show()
-        """
 
 
-#DataPreprocessor().count_reviews_length()
-#DataPreprocessor().train_word2vec()
-#DataPreprocessor().get_embedding_matrix('data/w2vmodel.bin')
-#DataPreprocessor().plot_model()
-#DataPreprocessor().separate_pos_neg()
-DataPreprocessor().count_word_occurences()
-
+#DataPreprocessor().count_word_occurences()
