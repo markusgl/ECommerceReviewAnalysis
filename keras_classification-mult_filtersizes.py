@@ -2,7 +2,7 @@ import os
 from keras.models import Sequential
 from keras.layers import Dense, Conv1D, GlobalMaxPooling1D, Activation, Merge, Dropout
 from keras.layers.embeddings import Embedding
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
 from data_preprocessing import DataPreprocessor
 import numpy as np
 from keras.utils import to_categorical
@@ -10,6 +10,7 @@ from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras import regularizers
 import pickle
+from keras import callbacks
 
 
 BASE_DIR = ''
@@ -129,7 +130,7 @@ for kernel_size in KERNEL_SIZES:
 
 model = Sequential()
 model.add(Merge(submodels, mode="concat"))
-model.add(Dense(HIDDEN_DIMS, kernel_regularizer=regularizers.l2(0.01)))
+model.add(Dense(HIDDEN_DIMS))
 model.add(Dropout(P_DROPOUT))
 model.add(Activation('relu'))
 #model.add(Dense(1))
@@ -144,12 +145,18 @@ model.compile(loss='binary_crossentropy',
 
 # Log to tensorboard
 tensorBoardCallback = TensorBoard(log_dir='./logs/sequential_mult_filters', write_graph=True)
+# Callbacks
+checkpointer = ModelCheckpoint(filepath='models/sentiment_sequential.hdf5', verbose=1, save_best_only=True)
+earlyStopper = EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto')
+reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.00001)
+
 
 model.fit([x_train, x_train, x_train],
           y_train,
           batch_size=BATCH_SIZE,
           epochs=EPOCHS,
           validation_data=([x_val, x_val, x_val], y_val),
+          callbacks=[checkpointer, earlyStopper, reduce_lr],
           verbose=2)
 model.summary()
 

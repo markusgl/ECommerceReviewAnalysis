@@ -15,8 +15,8 @@ import pickle
 class DataPreprocessor:
 
     def separate_pos_neg(self):
-        keep_words_and_punct = r"[^a-zA-Z0-9?!.]|[.]{2,}"
-        keep_words = r"[^a-zA-Z]|[.]{2,}"
+        keep_words_and_punct = r"[^a-zA-Z0-9?!.]|[\.]{2,}"
+        keep_words = r"[^a-zA-Z0-9]|[\.]{2,}"
         mult_whitespaces = "\s{2,}"
 
         df = pd.read_csv('data/review_data.csv')
@@ -43,10 +43,10 @@ class DataPreprocessor:
             #print(sentences)
 
             if row['Rating'] >= 3:
-                texts.append(clean_review)
+                texts.append(sentences)
                 labels.append(0)
             else:
-                texts.append(clean_review)
+                texts.append(sentences)
                 labels.append(1)
 
         return texts, labels
@@ -144,7 +144,7 @@ class DataPreprocessor:
         return embeddings_index
 
     def get_embeddings_index_from_google_model(self):
-        model = KeyedVectors.load_word2vec_format('C:/develop/Data/GoogleNews-vectors-negative300.bin', binary=True, limit=15000)
+        model = KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True, limit=15000)
 
         embeddings_index = {}
         for word in range(len(model.wv.vocab)):

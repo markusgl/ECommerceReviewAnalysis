@@ -1,20 +1,22 @@
 import itertools
 import os
+from keras import callbacks
 from keras.models import Sequential
 from keras.layers import Dense, Conv1D, GlobalMaxPooling1D, Activation, Dropout, BatchNormalization
 from keras.layers.embeddings import Embedding
-from keras.callbacks import TensorBoard
-from keras.optimizers import Adam
-from sklearn.preprocessing import MinMaxScaler
-
+from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
+from keras.optimizers import Adam, SGD
 from data_preprocessing import DataPreprocessor
 import numpy as np
 from keras.utils import to_categorical
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 import pickle
+from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix,  accuracy_score, \
+    f1_score, precision_score, recall_score
 
 BASE_DIR = ''
 GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
@@ -98,10 +100,10 @@ for word, i in word_index.items():
 
 # set parameters:
 BATCH_SIZE = 32
-FILTERS = 300
+FILTERS = 250
 KERNEL_SIZE = 3
 HIDDEN_DIMS = 250
-EPOCHS = 10
+EPOCHS = 50
 P_DROPOUT = 0.5
 
 model = Sequential()
@@ -122,23 +124,27 @@ model.add(GlobalMaxPooling1D())
 model.add(Dense(HIDDEN_DIMS))
 model.add(Dropout(P_DROPOUT))
 model.add(Activation('relu'))
-
 #model.add(Dense(1))
 model.add(Dense(len(labels_index)))
 model.add(Activation('sigmoid'))
+#model.add(Activation('softmax'))
 
-# Log to tensorboard
-tensorBoardCallback = TensorBoard(log_dir='./logs/sequential', write_graph=True)
 
 model.compile(loss='binary_crossentropy',
-              optimizer=Adam(lr=0.003),
+              optimizer='Adamax',
               metrics=['accuracy'])
+
+# Callbacks
+tensorBoardCallback = TensorBoard(log_dir='./logs/sequential', write_graph=True)
+checkpointer = ModelCheckpoint(filepath='models/sentiment_sequential.hdf5', verbose=1, save_best_only=True)
+earlyStopper = EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto')
+reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.00001)
 
 model.fit(x_train, y_train,
           batch_size=BATCH_SIZE,
           epochs=EPOCHS,
           validation_data=(x_val, y_val),
-          callbacks=[tensorBoardCallback],
+          callbacks=[checkpointer, earlyStopper, reduce_lr],
           verbose=2)
 
 
@@ -147,3 +153,42 @@ scores = model.evaluate(x_val, y_val, verbose=0, batch_size=BATCH_SIZE)
 print("Accuracy: %.2f%%" % (scores[1]*100))
 print("Loss: %.2f%%" % (scores[0]*100))
 
+
+########### CROSS VALIDATION ############
+# scores
+ac_scores = []
+f1_scores = []
+prec_scores = []
+rec_scores = []
+
+confusion = np.array([[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0]])
+
+cv = list(StratifiedKFold(n_splits=15, random_state=1).split(texts, labels))
+
+for k, (train_indices, test_indices) in enumerate(cv):
+    train_text = texts[train_indices]
+    train_y = labels[train_indices]
+
+    test_text = texts[test_indices]
+    test_y = labels[test_indices]
+
+    model.fit(train_text, train_y)
+    predictions = model.predict(test_text)
+
+    confusion += confusion_matrix(test_y, predictions)
+
+    ac_scores.append(accuracy_score(test_y, predictions))
+    f1_scores.append(f1_score(test_y, predictions, average="macro"))
+    prec_scores.append(precision_score(test_y, predictions, average="macro"))
+    rec_scores.append(recall_score(test_y, predictions, average="macro"))
+
+print("---------------------- \nResults for ", 'CNN', " with ", "word embeddings" ":")
+print("K-Folds Accuracy-score: ", sum(ac_scores) / len(ac_scores))
+print("K-Folds F1-score: ", sum(f1_scores) / len(f1_scores))
+print("K-Folds Precision-score: ", sum(prec_scores) / len(prec_scores))
+print("K-Folds Recall-score: ", sum(rec_scores) / len(rec_scores))
+
+print("CV accuracy : %.3f +/- %.3f" % (np.mean(ac_scores), np.std(ac_scores)))
