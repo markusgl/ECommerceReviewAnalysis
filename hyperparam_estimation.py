@@ -100,13 +100,13 @@ for word, i in word_index.items():
         embedding_matrix[i] = embedding_vector
 
 
-def create_model(optimizer='adam'):
+def create_model(activation, optimizer, dropout_rate):
 
     # set parameters:
     FILTERS = 250
     KERNEL_SIZE = 3
     HIDDEN_DIMS = 250
-    P_DROPOUT = 0.5
+   # P_DROPOUT = 0.5
 
     model = Sequential()
     model.add(Embedding(len(word_index) + 1,
@@ -114,8 +114,8 @@ def create_model(optimizer='adam'):
                         weights=[embedding_matrix],
                         input_length=max_sequence_len))
 
-    # model.add(Dropout(P_DROPOUT))
-    model.add(BatchNormalization())
+    model.add(Dropout(dropout_rate))
+    #model.add(BatchNormalization())
     model.add(Conv1D(FILTERS,
                      KERNEL_SIZE,
                      padding='valid',
@@ -124,10 +124,10 @@ def create_model(optimizer='adam'):
 
     model.add(GlobalMaxPooling1D())
     model.add(Dense(HIDDEN_DIMS))
-    model.add(Dropout(P_DROPOUT))
+    model.add(Dropout(dropout_rate))
     model.add(Activation('relu'))
     model.add(Dense(len(labels_index)))
-    model.add(Activation('sigmoid'))
+    model.add(Activation(activation))
 
     model.compile(loss='binary_crossentropy',
                   optimizer=optimizer,
@@ -146,7 +146,7 @@ optimizer = ['SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adam', 'Adamax', 'Nadam']
 activation = ['softmax', 'softplus', 'softsign', 'relu', 'tanh', 'sigmoid', 'hard_sigmoid', 'linear']
 dropout_rate = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
-param_grid = dict(optimizer=optimizer)
+param_grid = dict(activation=activation, optimizer=optimizer, dropout_rate=dropout_rate)
 grid = GridSearchCV(estimator=model, param_grid=param_grid)
 grid_result = grid.fit(x_train, y_train, verbose=2)
 

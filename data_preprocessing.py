@@ -144,7 +144,7 @@ class DataPreprocessor:
         return embeddings_index
 
     def get_embeddings_index_from_google_model(self):
-        model = KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True, limit=15000)
+        model = KeyedVectors.load_word2vec_format('C:/develop/data/GoogleNews-vectors-negative300.bin', binary=True, limit=15000)
 
         embeddings_index = {}
         for word in range(len(model.wv.vocab)):

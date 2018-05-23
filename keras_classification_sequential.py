@@ -5,7 +5,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Conv1D, GlobalMaxPooling1D, Activation, Dropout, BatchNormalization
 from keras.layers.embeddings import Embedding
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
-from keras.optimizers import Adam, SGD
+from keras.optimizers import Adam, SGD, Adamax
 from data_preprocessing import DataPreprocessor
 import numpy as np
 from keras.utils import to_categorical
@@ -112,8 +112,8 @@ model.add(Embedding(len(word_index) + 1,
                     weights=[embedding_matrix],
                     input_length=max_sequence_len))
 
-#model.add(Dropout(P_DROPOUT))
-model.add(BatchNormalization())
+model.add(Dropout(P_DROPOUT))
+#model.add(BatchNormalization())
 model.add(Conv1D(FILTERS,
                  KERNEL_SIZE,
                  padding='valid',
@@ -131,7 +131,7 @@ model.add(Activation('sigmoid'))
 
 
 model.compile(loss='binary_crossentropy',
-              optimizer='Adamax',
+              optimizer=Adamax(lr=0.001),
               metrics=['accuracy'])
 
 # Callbacks
@@ -155,6 +155,7 @@ print("Loss: %.2f%%" % (scores[0]*100))
 
 
 ########### CROSS VALIDATION ############
+"""
 # scores
 ac_scores = []
 f1_scores = []
@@ -166,9 +167,11 @@ confusion = np.array([[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0],
                       [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0],
                       [0, 0, 0, 0, 0, 0, 0]])
 
-cv = list(StratifiedKFold(n_splits=15, random_state=1).split(texts, labels))
+kfold = StratifiedKFold(n_splits=10, random_state=1).split(texts, labels)
 
-for k, (train_indices, test_indices) in enumerate(cv):
+for k, (train_indices, test_indices) in enumerate(kfold):
+    #model.fit(x_train[train_indices], y_train[train_indices])
+
     train_text = texts[train_indices]
     train_y = labels[train_indices]
 
@@ -181,9 +184,9 @@ for k, (train_indices, test_indices) in enumerate(cv):
     confusion += confusion_matrix(test_y, predictions)
 
     ac_scores.append(accuracy_score(test_y, predictions))
-    f1_scores.append(f1_score(test_y, predictions, average="macro"))
-    prec_scores.append(precision_score(test_y, predictions, average="macro"))
-    rec_scores.append(recall_score(test_y, predictions, average="macro"))
+    f1_scores.append(f1_score(test_y, predictions))
+    prec_scores.append(precision_score(test_y, predictions))
+    rec_scores.append(recall_score(test_y, predictions))
 
 print("---------------------- \nResults for ", 'CNN', " with ", "word embeddings" ":")
 print("K-Folds Accuracy-score: ", sum(ac_scores) / len(ac_scores))
@@ -192,3 +195,4 @@ print("K-Folds Precision-score: ", sum(prec_scores) / len(prec_scores))
 print("K-Folds Recall-score: ", sum(rec_scores) / len(rec_scores))
 
 print("CV accuracy : %.3f +/- %.3f" % (np.mean(ac_scores), np.std(ac_scores)))
+"""
