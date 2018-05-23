@@ -8,7 +8,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Conv1D, GlobalMaxPooling1D, Activation, Dropout, BatchNormalization
 from keras.layers.embeddings import Embedding
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
-from keras.optimizers import Adam, SGD
+from keras.optimizers import Adam, SGD, Adamax
 
 from data_preprocessing import DataPreprocessor
 import numpy as np
@@ -100,7 +100,7 @@ for word, i in word_index.items():
         embedding_matrix[i] = embedding_vector
 
 
-def create_model(activation, optimizer='adam', dropout_rate='0.5'):
+def create_model(activation='sigmoid', optimizer='adam', dropout_rate='0.5'):
 
     # set parameters:
     FILTERS = 250
@@ -131,7 +131,7 @@ def create_model(activation, optimizer='adam', dropout_rate='0.5'):
     model.add(Activation(activation))
 
     model.compile(loss='binary_crossentropy',
-                  optimizer=optimizer,
+                  optimizer='adam',
                   metrics=['accuracy'])
 
     return model
@@ -147,7 +147,7 @@ optimizer = ['SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adam', 'Adamax', 'Nadam']
 activation = ['softmax', 'softplus', 'softsign', 'relu', 'tanh', 'sigmoid', 'hard_sigmoid', 'linear']
 dropout_rate = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
-param_grid = dict(activation=activation)
+param_grid = dict(dropout_rate)
 grid = GridSearchCV(estimator=model, param_grid=param_grid)
 grid_result = grid.fit(x_train, y_train, verbose=2)
 

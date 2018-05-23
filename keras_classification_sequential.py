@@ -6,6 +6,10 @@ from keras.layers import Dense, Conv1D, GlobalMaxPooling1D, Activation, Dropout,
 from keras.layers.embeddings import Embedding
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
 from keras.optimizers import Adam, SGD, Adamax
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
 from data_preprocessing import DataPreprocessor
 import numpy as np
 from keras.utils import to_categorical
@@ -99,11 +103,11 @@ for word, i in word_index.items():
 
 # set parameters:
 BATCH_SIZE = 32
-FILTERS = 250
+FILTERS = 300
 KERNEL_SIZE = 3
 HIDDEN_DIMS = 250
 EPOCHS = 50
-P_DROPOUT = 0.5
+P_DROPOUT = 0.2
 
 model = Sequential()
 model.add(Embedding(len(word_index) + 1,
@@ -112,8 +116,8 @@ model.add(Embedding(len(word_index) + 1,
                     input_length=max_sequence_len,
                     trainable=False))  # prevent keras from updating the word indices during training process
 
-#model.add(Dropout(P_DROPOUT))
-model.add(BatchNormalization())
+model.add(Dropout(P_DROPOUT))
+#model.add(BatchNormalization())
 model.add(Conv1D(FILTERS,
                  KERNEL_SIZE,
                  padding='valid',
@@ -131,7 +135,7 @@ model.add(Activation('sigmoid'))
 
 
 model.compile(loss='binary_crossentropy',
-              optimizer=Adamax(lr=0.001),
+              optimizer='adam',
               metrics=['accuracy'])
 
 # Callbacks
@@ -196,3 +200,4 @@ print("K-Folds Recall-score: ", sum(rec_scores) / len(rec_scores))
 
 print("CV accuracy : %.3f +/- %.3f" % (np.mean(ac_scores), np.std(ac_scores)))
 """
+
