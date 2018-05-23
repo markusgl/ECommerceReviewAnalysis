@@ -34,13 +34,12 @@ class DataPreprocessor:
 
         for i, row in df.iterrows():
             review = str(row['Title']) + '. ' + str(row['Review Text'])
-            #clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
-            clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words, ' ', str(review).lower()))
+            clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
+            #clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words, ' ', str(review).lower()))
             tokens = word_tokenize(clean_review)
-            #filtered_sentence = [word for word in tokens if not word in stop_words and not word in duplicate_words]
-            filtered_sentence = [word for word in tokens if not word in stop_words]
+            filtered_sentence = [word for word in tokens if not word in stop_words and not word in duplicate_words]
+            #filtered_sentence = [word for word in tokens if not word in stop_words]
             sentences = " ".join(filtered_sentence)
-            #print(sentences)
 
             if row['Rating'] >= 3:
                 texts.append(sentences)
@@ -144,7 +143,8 @@ class DataPreprocessor:
         return embeddings_index
 
     def get_embeddings_index_from_google_model(self):
-        model = KeyedVectors.load_word2vec_format('C:/develop/data/GoogleNews-vectors-negative300.bin', binary=True, limit=15000)
+        #model = KeyedVectors.load_word2vec_format('C:/develop/data/GoogleNews-vectors-negative300.bin', binary=True, limit=15000)
+        model = KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True, limit=15000)
 
         embeddings_index = {}
         for word in range(len(model.wv.vocab)):

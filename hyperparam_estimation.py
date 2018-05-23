@@ -100,7 +100,7 @@ for word, i in word_index.items():
         embedding_matrix[i] = embedding_vector
 
 
-def create_model(activation, optimizer, dropout_rate):
+def create_model(activation, optimizer='adam', dropout_rate='0.5'):
 
     # set parameters:
     FILTERS = 250
@@ -112,7 +112,8 @@ def create_model(activation, optimizer, dropout_rate):
     model.add(Embedding(len(word_index) + 1,
                         EMBEDDING_DIM,
                         weights=[embedding_matrix],
-                        input_length=max_sequence_len))
+                        input_length=max_sequence_len,
+                        trainable=False))
 
     model.add(Dropout(dropout_rate))
     #model.add(BatchNormalization())
@@ -146,7 +147,7 @@ optimizer = ['SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adam', 'Adamax', 'Nadam']
 activation = ['softmax', 'softplus', 'softsign', 'relu', 'tanh', 'sigmoid', 'hard_sigmoid', 'linear']
 dropout_rate = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
-param_grid = dict(activation=activation, optimizer=optimizer, dropout_rate=dropout_rate)
+param_grid = dict(activation=activation)
 grid = GridSearchCV(estimator=model, param_grid=param_grid)
 grid_result = grid.fit(x_train, y_train, verbose=2)
 

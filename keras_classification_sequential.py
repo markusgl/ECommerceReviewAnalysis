@@ -97,7 +97,6 @@ for word, i in word_index.items():
         # words not found in embedding index will be all-zeros.
         embedding_matrix[i] = embedding_vector
 
-
 # set parameters:
 BATCH_SIZE = 32
 FILTERS = 250
@@ -110,10 +109,11 @@ model = Sequential()
 model.add(Embedding(len(word_index) + 1,
                     EMBEDDING_DIM,
                     weights=[embedding_matrix],
-                    input_length=max_sequence_len))
+                    input_length=max_sequence_len,
+                    trainable=False))  # prevent keras from updating the word indices during training process
 
-model.add(Dropout(P_DROPOUT))
-#model.add(BatchNormalization())
+#model.add(Dropout(P_DROPOUT))
+model.add(BatchNormalization())
 model.add(Conv1D(FILTERS,
                  KERNEL_SIZE,
                  padding='valid',
