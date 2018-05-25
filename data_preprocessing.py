@@ -301,7 +301,7 @@ class DataPreprocessor:
         neg_bar = plt.bar(X + 0.40, list(duplicate_neg_short.values()), width=0.30, color='r')
         plt.xlabel('Wörter')
         plt.ylabel('Vorkommen in Prozent')
-        plt.title('Zehn häufigsten Wörter in beiden Listen')
+        plt.title('Zehn häufigsten Wörter in beiden Klassen')
         #plt.set_xticks(X + 0.25 / 2)
         plt.xticks(X + 0.25 / 2, list(duplicate_neg_short.keys()))
         plt.legend((pos_bar[0], neg_bar[0]), ('Positiv', 'Negativ'), loc='upper right')

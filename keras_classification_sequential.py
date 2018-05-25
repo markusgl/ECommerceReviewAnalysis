@@ -27,7 +27,7 @@ GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
 #MAX_SEQUENCE_LENGTH = 150
 #MAX_NUM_WORDS = 3000
 VALIDATION_SPLIT = 0.2
-WORD2VEC = True
+WORD2VEC = False
 
 labels_index = {'pos': 0, 'neg': 1}
 data_preprocessor = DataPreprocessor()
