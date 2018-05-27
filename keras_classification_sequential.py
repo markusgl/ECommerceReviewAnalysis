@@ -27,7 +27,7 @@ GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
 #MAX_SEQUENCE_LENGTH = 150
 #MAX_NUM_WORDS = 3000
 VALIDATION_SPLIT = 0.2
-WORD2VEC = True
+WORD2VEC = False
 
 labels_index = {'pos': 0, 'neg': 1}
 data_preprocessor = DataPreprocessor()
@@ -152,7 +152,9 @@ model.fit(x_train, y_train,
 
 
 # Evaluation on the test set
-scores = model.evaluate(x_val, y_val, verbose=0, batch_size=BATCH_SIZE)
+from keras.models import load_model
+best_model = load_model("models/sentiment_sequential.hdf5")
+
+scores = best_model.evaluate(x_val, y_val, verbose=0, batch_size=BATCH_SIZE)
 print("Accuracy: %.2f%%" % (scores[1]*100))
 print("Loss: %.2f%%" % (scores[0]*100))
-

@@ -37,19 +37,20 @@ class DataPreprocessor:
             clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
             #clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words, ' ', str(review).lower()))
             tokens = word_tokenize(clean_review)
-            filtered_sentence = [word for word in tokens if not word in stop_words and not word in duplicate_words]
-            #filtered_sentence = [word for word in tokens if not word in stop_words]
+            #filtered_sentence = [word for word in tokens if not word in stop_words and not word in duplicate_words]
+            filtered_sentence = [word for word in tokens if not word in stop_words]
             sentences = " ".join(filtered_sentence)
 
             if row['Rating'] >= 3:
-                texts.append(clean_review)
+                texts.append(sentences)
                 labels.append(0)
             else:
-                texts.append(clean_review)
+                texts.append(sentences)
                 labels.append(1)
 
         return texts, labels
 
+    """
     def separate_pos_neutral_neg(self):
         keep_words_and_punct = r"[^a-zA-Z?!.]|[.]{2,}"
         keep_words = r"[^a-zA-Z]|[.]{2,}"
@@ -77,6 +78,7 @@ class DataPreprocessor:
                 labels.append(2)
 
         return positive_reviews, neutral_reviews, negative_reviews, labels
+    """
 
     def clean_and_separate_reviews(self):
         keep_words_and_punct = r"[^a-zA-Z?!.]|[.]{2,}"
@@ -144,7 +146,7 @@ class DataPreprocessor:
 
     def get_embeddings_index_from_google_model(self):
         #model = KeyedVectors.load_word2vec_format('C:/develop/data/GoogleNews-vectors-negative300.bin', binary=True, limit=15000)
-        model = KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True, limit=30000)
+        model = KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True, limit=25000)
 
         embeddings_index = {}
         for word in range(len(model.wv.vocab)):
@@ -304,9 +306,10 @@ class DataPreprocessor:
         plt.title('Zehn häufigsten Wörter in beiden Klassen')
         #plt.set_xticks(X + 0.25 / 2)
         plt.xticks(X + 0.25 / 2, list(duplicate_neg_short.keys()))
+        plt.ylim([0,7])
         plt.legend((pos_bar[0], neg_bar[0]), ('Positiv', 'Negativ'), loc='upper right')
         plt.savefig('wordcount_pos_neg_wo_clean.png', format='png')
         plt.show()
 
 
-#DataPreprocessor().count_word_occurences()
+DataPreprocessor().count_word_occurences()
