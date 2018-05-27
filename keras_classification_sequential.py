@@ -27,7 +27,7 @@ GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
 #MAX_SEQUENCE_LENGTH = 150
 #MAX_NUM_WORDS = 3000
 VALIDATION_SPLIT = 0.2
-WORD2VEC = False
+WORD2VEC = True
 
 labels_index = {'pos': 0, 'neg': 1}
 data_preprocessor = DataPreprocessor()
@@ -116,11 +116,10 @@ model.add(Embedding(len(word_index) + 1,
                     input_length=max_sequence_len,
                     trainable=False))  # prevent keras from updating the word indices during training process
 
-model.add(Dropout(P_DROPOUT))
-#model.add(BatchNormalization())
+model.add(BatchNormalization())
 model.add(Conv1D(FILTERS,
                  KERNEL_SIZE,
-                 padding='valid',
+                 padding='same',
                  activation='relu',
                  strides=1))
 
@@ -141,7 +140,7 @@ model.compile(loss='binary_crossentropy',
 # Callbacks
 tensorBoardCallback = TensorBoard(log_dir='./logs/sequential', write_graph=True)
 checkpointer = ModelCheckpoint(filepath='models/sentiment_sequential.hdf5', verbose=1, save_best_only=True)
-earlyStopper = EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto')
+earlyStopper = EarlyStopping(monitor='val_loss', min_delta=0, patience=7, verbose=0, mode='auto')
 reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.00001)
 
 model.fit(x_train, y_train,
@@ -156,48 +155,4 @@ model.fit(x_train, y_train,
 scores = model.evaluate(x_val, y_val, verbose=0, batch_size=BATCH_SIZE)
 print("Accuracy: %.2f%%" % (scores[1]*100))
 print("Loss: %.2f%%" % (scores[0]*100))
-
-
-########### CROSS VALIDATION ############
-"""
-# scores
-ac_scores = []
-f1_scores = []
-prec_scores = []
-rec_scores = []
-
-confusion = np.array([[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0],
-                      [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0],
-                      [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0],
-                      [0, 0, 0, 0, 0, 0, 0]])
-
-kfold = StratifiedKFold(n_splits=10, random_state=1).split(texts, labels)
-
-for k, (train_indices, test_indices) in enumerate(kfold):
-    #model.fit(x_train[train_indices], y_train[train_indices])
-
-    train_text = texts[train_indices]
-    train_y = labels[train_indices]
-
-    test_text = texts[test_indices]
-    test_y = labels[test_indices]
-
-    model.fit(train_text, train_y)
-    predictions = model.predict(test_text)
-
-    confusion += confusion_matrix(test_y, predictions)
-
-    ac_scores.append(accuracy_score(test_y, predictions))
-    f1_scores.append(f1_score(test_y, predictions))
-    prec_scores.append(precision_score(test_y, predictions))
-    rec_scores.append(recall_score(test_y, predictions))
-
-print("---------------------- \nResults for ", 'CNN', " with ", "word embeddings" ":")
-print("K-Folds Accuracy-score: ", sum(ac_scores) / len(ac_scores))
-print("K-Folds F1-score: ", sum(f1_scores) / len(f1_scores))
-print("K-Folds Precision-score: ", sum(prec_scores) / len(prec_scores))
-print("K-Folds Recall-score: ", sum(rec_scores) / len(rec_scores))
-
-print("CV accuracy : %.3f +/- %.3f" % (np.mean(ac_scores), np.std(ac_scores)))
-"""
 

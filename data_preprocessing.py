@@ -34,18 +34,18 @@ class DataPreprocessor:
 
         for i, row in df.iterrows():
             review = str(row['Title']) + '. ' + str(row['Review Text'])
-            #clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
-            clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words, ' ', str(review).lower()))
+            clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
+            #clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words, ' ', str(review).lower()))
             tokens = word_tokenize(clean_review)
             filtered_sentence = [word for word in tokens if not word in stop_words and not word in duplicate_words]
             #filtered_sentence = [word for word in tokens if not word in stop_words]
             sentences = " ".join(filtered_sentence)
 
             if row['Rating'] >= 3:
-                texts.append(sentences)
+                texts.append(clean_review)
                 labels.append(0)
             else:
-                texts.append(sentences)
+                texts.append(clean_review)
                 labels.append(1)
 
         return texts, labels
