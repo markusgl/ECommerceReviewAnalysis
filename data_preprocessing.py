@@ -20,8 +20,10 @@ class DataPreprocessor:
         mult_whitespaces = "\s{2,}"
 
         df = pd.read_csv('data/review_data.csv')
-        df.dropna(how="any", inplace=True)  # drop blank lines
-        # df = pd.read_csv('data/review_data_small.csv')
+        #df.dropna(how="any", inplace=True)  # drop blank lines
+
+        reviews = df[['Title', 'Review Text', 'Rating']]
+        reviews.dropna(how="any", inplace=True, subset=['Review Text', 'Rating'])
 
         texts = []
         labels = []
@@ -32,13 +34,13 @@ class DataPreprocessor:
         #file.close()
         duplicate_words = ['dress', 'size', 'top', 'fit', 'like']
 
-        for i, row in df.iterrows():
+        for i, row in reviews.iterrows():
             review = str(row['Title']) + '. ' + str(row['Review Text'])
             clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
             #clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words, ' ', str(review).lower()))
             tokens = word_tokenize(clean_review)
-            #filtered_sentence = [word for word in tokens if not word in stop_words and not word in duplicate_words]
-            filtered_sentence = [word for word in tokens if not word in stop_words]
+            filtered_sentence = [word for word in tokens if not word in stop_words and not word in duplicate_words]
+            #filtered_sentence = [word for word in tokens if not word in stop_words]
             sentences = " ".join(filtered_sentence)
 
             if row['Rating'] >= 3:
@@ -50,35 +52,6 @@ class DataPreprocessor:
 
         return texts, labels
 
-    """
-    def separate_pos_neutral_neg(self):
-        keep_words_and_punct = r"[^a-zA-Z?!.]|[.]{2,}"
-        keep_words = r"[^a-zA-Z]|[.]{2,}"
-        mult_whitespaces = "\s{3,}"
-
-        df = pd.read_csv('data/review_data.csv')
-        df.dropna(how="any", inplace=True)  # drop blank lines
-
-        # df = pd.read_csv('data/review_data_small.csv')
-        positive_reviews = []
-        negative_reviews = []
-        neutral_reviews = []
-        labels = []
-        for i, row in df.iterrows():
-            review = str(row['Title']) + '. ' + str(row['Review Text'])
-            clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
-            if row['Rating'] > 3:
-                positive_reviews.append(clean_review)
-                labels.append(0)
-            elif row['Rating'] == 3:
-                neutral_reviews.append(clean_review)
-                labels.append(1)
-            else:
-                negative_reviews.append(clean_review)
-                labels.append(2)
-
-        return positive_reviews, neutral_reviews, negative_reviews, labels
-    """
 
     def clean_and_separate_reviews(self):
         keep_words_and_punct = r"[^a-zA-Z?!.]|[.]{2,}"
@@ -178,19 +151,17 @@ class DataPreprocessor:
         df = pd.read_csv('data/review_data.csv')
         count_pos = 0
         count_neg = 0
-        count_neu = 0
+        reviews = df[['Title', 'Review Text', 'Rating']]
+        reviews.dropna(how="any", inplace=True, subset=['Review Text', 'Rating'])
 
-        for i, row in df.iterrows():
+        for i, row in reviews.iterrows():
             if row['Rating'] >= 3:
                 count_pos += 1
-            #elif row['Rating'] == 3:
-            #    count_neu += 1
             else:
                 count_neg += 1
 
         print("Positive Reviews: %i" % count_pos)
         print("Negative Reviews: %i" % count_neg)
-        print("Neutral Reviews: %i" % count_neu)
 
     def count_reviews_length(self):
         df = pd.read_csv('data/review_data.csv')
@@ -312,4 +283,5 @@ class DataPreprocessor:
         plt.show()
 
 
-DataPreprocessor().count_word_occurences()
+#DataPreprocessor().count_word_occurences()
+#DataPreprocessor().count_reviews()
