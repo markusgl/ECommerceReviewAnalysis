@@ -24,8 +24,6 @@ KEEP_WORDS = 2000
 labels_index = {'pos': 0, 'neg': 1}  # dictionary mapping label name to numeric id
 
 data_preprocessor = DataPreprocessor()
-#positive_reviews, neutral_reviews, negative_reviews, labels = data_preprocessor.separate_pos_neutral_neg()
-#texts = positive_reviews + neutral_reviews + negative_reviews
 texts, labels = data_preprocessor.separate_pos_neg()
 
 tokenizer = Tokenizer(num_words=KEEP_WORDS)
@@ -42,7 +40,6 @@ print("max sequence len: %i" % max_sequence_len)
 
 data = pad_sequences(sequences, maxlen=max_sequence_len)
 labels = to_categorical(np.asarray(labels))
-#labels = np.asarray(labels)
 print('Shape of data tensor:', data.shape)
 print('Shape of label tensor:', labels.shape)
 
@@ -165,5 +162,3 @@ model.summary()
 scores = model.evaluate(x_val, y_val, verbose=0, batch_size=BATCH_SIZE)
 print("Accuracy: %.2f%%" % (scores[1]*100))
 print("Loss: %.2f%%" % (scores[0]*100))
-# TODO confusion matrix
-

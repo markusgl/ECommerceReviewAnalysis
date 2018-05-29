@@ -1,37 +1,35 @@
 import pandas as pd
 import re
 from gensim.models import Word2Vec, KeyedVectors
-import matplotlib.pyplot as plt
+
 from nltk.tokenize import WhitespaceTokenizer
 from sklearn.decomposition import PCA
 import numpy as np
-from collections import Counter
 import matplotlib.pyplot as plt
 import operator
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-import pickle
+
 
 class DataPreprocessor:
 
     def separate_pos_neg(self):
+        """
+        Preprocessing steps for ML
+        Extracts the three columns Title, Review Text and Rating from the dataset
+        Performs stopword removal and elimination of special characters
+        """
         keep_words_and_punct = r"[^a-zA-Z0-9?!.]|[\.]{2,}"
-        keep_words = r"[^a-zA-Z0-9]|[\.]{2,}"
+        #keep_words = r"[^a-zA-Z0-9]|[\.]{2,}"
         mult_whitespaces = "\s{2,}"
 
         df = pd.read_csv('data/review_data.csv')
-        #df.dropna(how="any", inplace=True)  # drop blank lines
-
         reviews = df[['Title', 'Review Text', 'Rating']]
         reviews.dropna(how="any", inplace=True, subset=['Review Text', 'Rating'])
 
         texts = []
         labels = []
         stop_words = set(stopwords.words('english'))
-
-        #file = open('data/duplicate_words', 'rb')
-        #duplicate_words = pickle.load(file)
-        #file.close()
         duplicate_words = ['dress', 'size', 'top', 'fit', 'like']
 
         for i, row in reviews.iterrows():
@@ -51,61 +49,6 @@ class DataPreprocessor:
                 labels.append(1)
 
         return texts, labels
-
-
-    def clean_and_separate_reviews(self):
-        keep_words_and_punct = r"[^a-zA-Z?!.]|[.]{2,}"
-        keep_words = r"[^a-zA-Z]|[.]{2,}"
-        mult_whitespaces = "\s{3,}"
-        df = pd.read_csv('data/review_data.csv')
-
-        clean_reviews = []
-        for i, row in df.iterrows():
-            review = str(row['Title']) + '. ' + str(row['Review Text'])
-            clean_review = re.sub(mult_whitespaces, ' ', re.sub(keep_words_and_punct, ' ', str(review).lower()))
-            clean_reviews.append(clean_review)
-        print("clean_reviews_length %s"%len(clean_reviews))
-        return clean_reviews
-
-    def split_and_tokenize_reviews(self):
-        # split sentences and tokenize each sentence to a list
-        reviews = self.clean_and_separate_reviews()
-        train_sentences = []
-        tokenizer = WhitespaceTokenizer()
-        for review in reviews:
-            sentences = re.split("[.?!]", str(review))
-            for sentence in sentences:
-                train_sentences.append(tokenizer.tokenize(sentence))
-        print("train_sentences length %s"%len(train_sentences))
-        return train_sentences
-
-    def train_word2vec(self):
-        train_sentences = self.split_and_tokenize_reviews()
-        # start word embeddings training
-        print("start training word2vec...")
-        model = Word2Vec(train_sentences, size=100, window=5, min_count=5, workers=4)
-        print("training completed")
-        print("vocabulary length %i" % len(model.wv.vocab))
-        model.save('models/w2vmodel.bin')
-
-
-    # store embeddings to numpy matrix for tensorflow and keras
-    def get_embedding_matrix(self, model_path):
-        model = Word2Vec.load(model_path)
-        # vocab_size = len(model.wv.vocab)
-        # get the dimension of the word vectors
-        vector_dim = len(model.wv['the']) # TODO more robust solution
-
-        # create appropriate numpy zeros array
-        embedding_matrix = np.zeros((len(model.wv.vocab), vector_dim))
-
-        # iterate over embedding representation of each word in the vocabulary and add it to the np array
-        for word in range(len(model.wv.vocab)):
-            embedding_vector = model.wv[model.wv.index2word[word]]
-            if embedding_vector is not None:
-                embedding_matrix[word] = embedding_vector
-
-        return embedding_matrix
 
     def get_embeddings_index(self, model_path):
         model = Word2Vec.load(model_path)
@@ -128,8 +71,11 @@ class DataPreprocessor:
 
         return embeddings_index
 
-    # Visualization using matplotlib and PCA
+
     def plot_model(self):
+        """
+        Visualization of word2vec model using matplotlib and PCA
+        """
         model = Word2Vec.load('models/w2vmodel.bin')
         #model = KeyedVectors.load_word2vec_format('./data/GoogleNews-vectors-negative300.bin', binary=True)
         #model = KeyedVectors.load_word2vec_format('models/w2vmodel.bin')
@@ -148,6 +94,10 @@ class DataPreprocessor:
         plt.show()
 
     def count_reviews(self):
+        """
+        simply counts the entries in each class for analysis purposes
+        :return:
+        """
         df = pd.read_csv('data/review_data.csv')
         count_pos = 0
         count_neg = 0
@@ -163,22 +113,9 @@ class DataPreprocessor:
         print("Positive Reviews: %i" % count_pos)
         print("Negative Reviews: %i" % count_neg)
 
-    def count_reviews_length(self):
-        df = pd.read_csv('data/review_data.csv')
-        max_len = 0
-
-        for i, row in df.iterrows():
-            words = (str(row['Title']) + '. ' + str(row['Review Text'])).split()
-            print(words)
-            review_length = len(Counter(words))
-            if review_length > max_len:
-                max_len = review_length
-
-        print("max review length: %i" % max_len)
-
-    def count_word_occurences(self):
+    def count_word_occurences(self, save=False):
         text, labels = DataPreprocessor().separate_pos_neg()
-        #print(len(labels))
+
         pos_list = []
         neg_list = []
         for sequence in text:
@@ -212,15 +149,9 @@ class DataPreprocessor:
                 else:
                     neg_word_index[token] = 1
 
-        amount_unique_pos_tokens = len(pos_word_index.keys())
-        amount_unique_neg_tokens = len(neg_word_index.keys())
-
         sorted_pos = sorted(pos_word_index.items(), key=operator.itemgetter(1), reverse=True)
         sorted_neg = sorted(neg_word_index.items(), key=operator.itemgetter(1), reverse=True)
-        print(sorted_pos)
-        print(sorted_neg)
 
-        #print(len(pos_token_list))
         sorted_pos_short = {}
         sorted_neg_short = {}
         for i in range(10):
@@ -230,44 +161,33 @@ class DataPreprocessor:
             sorted_neg_short[tupple_neg[0]] = (tupple_neg[1] / len(neg_token_list))*100
 
 
-        """
-        duplicate_list = []
-        for token in pos_token_list:
-            if token in neg_token_list:
-                duplicate_list.append(token)
-        """
-        #file = open('data/duplicate_words', 'wb')
-        #pickle.dump(duplicate_list, file)
-        #file.close()
-        #print(duplicate_list)
-
-        """
+        # Plot most frequent words in positive class before stop word elimination
         plt.bar(range(len(sorted_pos_short)), list(sorted_pos_short.values()), align='center', color='b')
         plt.xlabel('Wörter')
         plt.ylabel('Vorkommen in Prozent')
         plt.title('Zehn häufigsten Wörter in Positivliste')
         plt.xticks(range(len(sorted_pos_short)), list(sorted_pos_short.keys()))
-        plt.savefig('wordcount_pos_wo_clean.png')
+        if save:
+            plt.savefig('wordcount_pos_wo_clean.png')
         plt.show()
 
+        # Plot most frequent words in negative class before stop word elimination
         plt.bar(range(len(sorted_neg_short)), list(sorted_neg_short.values()), align='center', color='r')
         plt.xlabel('Wörter')
         plt.ylabel('Vorkommen in Prozent')
         plt.title('Zehn häufigsten Wörter in Negativliste')
         plt.xticks(range(len(sorted_neg_short)), list(sorted_neg_short.keys()))
-        plt.savefig('wordcount_neg_wo_clean.png')
+        if save:
+            plt.savefig('wordcount_neg_wo_clean.png')
         plt.show()
 
-        """
-
+        # Plot most frequent words in both class before stop word elimination
         duplicate_pos_short = {}
         duplicate_neg_short = {}
         for key in sorted_pos_short.keys():
             if key in sorted_neg_short.keys():
                 duplicate_pos_short[key] = sorted_pos_short[key]
                 duplicate_neg_short[key] = sorted_neg_short[key]
-        #print(duplicate_pos_short)
-        #print(duplicate_neg_short)
 
         X = np.arange(len(duplicate_neg_short.keys()))
         pos_bar = plt.bar(X + 0.10, list(duplicate_pos_short.values()), width=0.30, color='b')
@@ -275,13 +195,12 @@ class DataPreprocessor:
         plt.xlabel('Wörter')
         plt.ylabel('Vorkommen in Prozent')
         plt.title('Zehn häufigsten Wörter in beiden Klassen')
-        #plt.set_xticks(X + 0.25 / 2)
         plt.xticks(X + 0.25 / 2, list(duplicate_neg_short.keys()))
         plt.ylim([0,7])
         plt.legend((pos_bar[0], neg_bar[0]), ('Positiv', 'Negativ'), loc='upper right')
-        plt.savefig('wordcount_pos_neg_wo_clean.png', format='png')
+        if save:
+            plt.savefig('wordcount_pos_neg_wo_clean.png', format='png')
         plt.show()
 
 
-#DataPreprocessor().count_word_occurences()
-#DataPreprocessor().count_reviews()
+

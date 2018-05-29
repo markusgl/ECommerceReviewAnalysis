@@ -42,6 +42,7 @@ print(word_index)
 print('Found %s unique tokens.' % len(word_index))
 max_sequence_len = 0
 for sequence in sequences:
+    print(sequence)
     if len(sequence) > max_sequence_len:
         max_sequence_len = len(sequence)
 print("max sequence len: %i" % max_sequence_len)
@@ -127,10 +128,8 @@ model.add(GlobalMaxPooling1D())
 model.add(Dense(HIDDEN_DIMS))
 model.add(Dropout(P_DROPOUT))
 model.add(Activation('relu'))
-#model.add(Dense(1))
 model.add(Dense(len(labels_index)))
 model.add(Activation('sigmoid'))
-#model.add(Activation('softmax'))
 
 
 model.compile(loss='binary_crossentropy',
