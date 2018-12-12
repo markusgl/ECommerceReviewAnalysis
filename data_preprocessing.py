@@ -1,16 +1,15 @@
-import pandas as pd
 import re
-from gensim.models import Word2Vec, KeyedVectors
+import operator
+import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+
+from gensim.models import Word2Vec, KeyedVectors
 from nltk.tokenize import WhitespaceTokenizer
 from sklearn.decomposition import PCA
-import numpy as np
 from collections import Counter
-import matplotlib.pyplot as plt
-import operator
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-import pickle
 
 class DataPreprocessor:
 
@@ -22,7 +21,7 @@ class DataPreprocessor:
         df = pd.read_csv('data/review_data.csv')
         #df.dropna(how="any", inplace=True)  # drop blank lines
 
-        reviews = df[['Title', 'Review Text', 'Rating']]
+        reviews = df.loc[:,('Title', 'Review Text', 'Rating')]
         reviews.dropna(how="any", inplace=True, subset=['Review Text', 'Rating'])
 
         texts = []
@@ -83,7 +82,9 @@ class DataPreprocessor:
         train_sentences = self.split_and_tokenize_reviews()
         # start word embeddings training
         print("start training word2vec...")
-        model = Word2Vec(train_sentences, size=100, window=5, min_count=5, workers=4)
+
+        # Train word2vec using skip-gram
+        model = Word2Vec(train_sentences, sg=1, size=100, window=5, min_count=5, workers=4)
         print("training completed")
         print("vocabulary length %i" % len(model.wv.vocab))
         model.save('models/w2vmodel.bin')
@@ -154,6 +155,7 @@ class DataPreprocessor:
         reviews = df[['Title', 'Review Text', 'Rating']]
         reviews.dropna(how="any", inplace=True, subset=['Review Text', 'Rating'])
 
+        #reviews.rating.value_counts()
         for i, row in reviews.iterrows():
             if row['Rating'] >= 3:
                 count_pos += 1
@@ -266,8 +268,7 @@ class DataPreprocessor:
             if key in sorted_neg_short.keys():
                 duplicate_pos_short[key] = sorted_pos_short[key]
                 duplicate_neg_short[key] = sorted_neg_short[key]
-        #print(duplicate_pos_short)
-        #print(duplicate_neg_short)
+
 
         X = np.arange(len(duplicate_neg_short.keys()))
         pos_bar = plt.bar(X + 0.10, list(duplicate_pos_short.values()), width=0.30, color='b')
@@ -282,6 +283,3 @@ class DataPreprocessor:
         plt.savefig('wordcount_pos_neg_wo_clean.png', format='png')
         plt.show()
 
-
-#DataPreprocessor().count_word_occurences()
-#DataPreprocessor().count_reviews()

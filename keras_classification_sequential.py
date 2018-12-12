@@ -1,26 +1,18 @@
-import itertools
 import os
+import pickle
+import numpy as np
+
 from keras import callbacks
 from keras.models import Sequential
 from keras.layers import Dense, Conv1D, GlobalMaxPooling1D, Activation, Dropout, BatchNormalization
 from keras.layers.embeddings import Embedding
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
-from keras.optimizers import Adam, SGD, Adamax
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-
-from data_preprocessing import DataPreprocessor
-import numpy as np
 from keras.utils import to_categorical
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
-import pickle
-from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import confusion_matrix
-import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix,  accuracy_score, \
-    f1_score, precision_score, recall_score
+
+from data_preprocessing import DataPreprocessor
+
 
 BASE_DIR = ''
 GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
@@ -29,7 +21,7 @@ GLOVE_DIR = os.path.join(BASE_DIR, 'data/glove.6B')
 VALIDATION_SPLIT = 0.2
 WORD2VEC = False
 
-labels_index = {'pos': 0, 'neg': 1}
+
 data_preprocessor = DataPreprocessor()
 texts, labels = data_preprocessor.separate_pos_neg()
 
@@ -108,6 +100,7 @@ KERNEL_SIZE = 3
 HIDDEN_DIMS = 250
 EPOCHS = 50
 P_DROPOUT = 0.2
+labels_index = {'pos': 0, 'neg': 1}
 
 model = Sequential()
 model.add(Embedding(len(word_index) + 1,
