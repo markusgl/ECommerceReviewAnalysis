@@ -1,12 +1,11 @@
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.svm import SVC
-from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.model_selection import train_test_split
 import numpy as np
 from sklearn.pipeline import Pipeline
 import time
 from data_preprocessing import DataPreprocessor
-
 
 # Data preprocessing
 data_preprocessor = DataPreprocessor()
@@ -21,11 +20,6 @@ pipeline = Pipeline([
                     ('clf', SVC(kernel='rbf', C=100, gamma=0.01, decision_function_shape='ovo', probability=True))
                     ])
 
-#vec = TfidfVectorizer(ngram_range=(1, 2), max_df=0.5, use_idf=False, sublinear_tf=True)
-#Xtr = vec.fit_transform(text_counts)
-#vec = pipeline.named_steps['vect']
-#features = vec.get_feature_names()
-
 def top_tfidf_feats(row, features, top_n=25):
     ''' Get top n tfidf values in row and return them with their corresponding feature names.'''
     topn_ids = np.argsort(row)[::-1][:top_n]
@@ -34,14 +28,11 @@ def top_tfidf_feats(row, features, top_n=25):
     df.columns = ['feature', 'tfidf']
     return df
 
-#print(top_tfidf_feats())
 print("Start training SVM...")
 start = time.time()
 pipeline.fit(X_train, y_train)
 print("traing time %s" % str(time.time()-start))
 print("Training finished")
 print("Starting validation...")
-#scores = cross_val_score(pipeline, df['Review Text'].values.astype(str), targets, cv=5)
-#scores = cross_val_score(pipeline, word_counts, targets, cv=5)
 scores = pipeline.score(X_test, y_test)
 print(scores)
